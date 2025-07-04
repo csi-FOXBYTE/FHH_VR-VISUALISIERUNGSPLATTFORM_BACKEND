@@ -16,9 +16,7 @@ export class DbService {
       try {
         const session = await this.authService.getSession();
 
-        console.log(session);
-
-        resolve(enhance(prisma, {}));
+        resolve(enhance(prisma, session));
       } catch (e) {
         return reject(e);
       }

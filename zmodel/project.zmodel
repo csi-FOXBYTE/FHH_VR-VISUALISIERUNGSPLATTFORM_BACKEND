@@ -1,0 +1,76 @@
+import "common"
+import "user"
+import "permissions"
+import "event"
+import "layer"
+
+model Project extends Base, Ownable {
+    title                 String            @db.Text
+    description           String            @db.Text
+
+    visibleForGroups      Group[]
+    visibleForUsers       User[]            @relation("visibleForUsers")
+
+    startingPoints        StartingPoint[]
+    clippingPolygons      ClippingPolygon[]
+    includedBaseLayers    BaseLayer[]
+    includedProjectLayers ProjectLayer[]    @relation("includedInProjects")
+    projectLayers         ProjectLayer[]
+
+    events                Event[]
+
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT:DELETE']]])
+}
+
+model ClippingPolygon extends Base, Ownable {
+    name      String
+    /// Comma separated point list [x0, y0, z0, ..., xn, yn, zn]
+    points    String  @db.Text
+    project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    projectId String
+
+    @@allow('all', project.owner.id == auth().id)
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:DELETE']]])
+}
+
+model ProjectFile extends Base {
+    name           String
+    href           String
+    /// JSON object of all assigned meta data
+    attributes     String       @db.Text
+
+    projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+    projectLayerId String
+
+    @@allow('all', projectLayer.belongsToProject.owner.id == auth().id)
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:DELETE']]])
+}
+
+/// Is global per definition, can not be associatd to a project.
+model VisualAxis extends DirectedPoint {
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VISUAL_AXIS:DELETE']]])
+}
+
+/// Can be global or local depending on if a project is defined.
+model StartingPoint extends DirectedPoint {
+    project   Project? @relation(fields: [projectId], references: [id])
+    projectId String?
+
+    @@allow('all', auth().id == project.owner.id)
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:DELETE']]])
+}

@@ -1,14 +1,13 @@
-import Fastify from "fastify";
 import fastifyMultipart from "@fastify/multipart";
-import "dotenv";
-import { getSession, registerAuth } from "./auth/index.js";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
-import json from "../package.json" with { type: "json" };
 import { registerControllers } from "@tganzhorn/fastify-modular";
-import { EventsController } from "./events/events.controller.js";
+import "dotenv";
+import Fastify from "fastify";
+import json from "../package.json" with { type: "json" };
+import { registerAuth } from "./auth/index.js";
 import { Converter3DController } from "./converter3D/converter3D.controller.js";
-import { authOptions } from "./auth/authOptions.js";
+import { EventsController } from "./events/events.controller.js";
 
 const fastify = Fastify({
   logger: true,
@@ -61,13 +60,7 @@ fastify.register(fastifySwaggerUi, {
 
 registerAuth(fastify);
 
-registerControllers(fastify, { createCustomContext: async (request, reply, routerContext) => {
-  const session = await getSession(request, authOptions);
-
-  console.log({session});
-
-  return { request, reply, routerCtx: routerContext, session };
-},  controllers: [EventsController, Converter3DController]});
+registerControllers(fastify, { controllers: [EventsController, Converter3DController]});
 
 fastify.route({
   method: "GET",

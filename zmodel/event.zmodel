@@ -1,0 +1,45 @@
+import "project"
+import "user"
+import "common"
+import "event"
+
+model Event extends Base, Ownable {
+  /// Can be one of MISSING_HOST, ACTIVE, PLANNED, END
+  status             String
+
+  title              String          @db.Text
+  startTime          DateTime
+  endTime            DateTime
+  joinCode           String?
+  heartbeatTimestamp DateTime?
+  project            Project?        @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projectId          String?
+
+  attendees          EventAttendee[]
+
+  @@allow('read', attendees?[userId == auth().id])
+
+  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT:CREATE']]])
+  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT:READ']]])
+  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT:UPDATE']]])
+  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT:DELETE']]])
+}
+
+/// This is explicit because of potential role assignments per event
+model EventAttendee {
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  eventId String
+  user    User   @relation(fields: [userId], references: [id])
+  userId  String
+
+  /// Can be one of GUEST, MODERATOR
+  role    String @default("GUEST")
+
+  @@id([eventId, userId])
+  @@allow('all', auth().id == userId)
+
+  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT_ATTENDEE:CREATE']]])
+  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT_ATTENDEE:READ']]])
+  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT_ATTENDEE:UPDATE']]])
+  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'EVENT_ATTENDEE:DELETE']]])
+}

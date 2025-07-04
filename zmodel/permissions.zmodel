@@ -1,0 +1,46 @@
+import "user"
+import "common"
+import "layer"
+import "project"
+
+model Group extends Base {
+    name              String      @unique
+
+    isAdminGroup      Boolean     @default(false) @deny('update', true)
+
+    assignedUsers     User[]
+    assignedRoles     Role[]
+
+    visibleBaseLayers BaseLayer[]
+    visibleProjects   Project[]
+
+    /// This is a glob style matcher that is separated by , because of the limitations of MSSQL in regards to Arrays
+    defaultFor        String?
+
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'GROUP:DELETE']]])
+}
+
+model Role extends Base {
+    assignedGroups      Group[]
+    assignedPermissions Permission[]
+    name                String       @unique
+
+    isAdminRole         Boolean      @default(false) @deny('update', true)
+
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'ROLE:DELETE']]])
+}
+
+/// This is readonly
+model Permission extends Base {
+    assignedRoles Role[]
+    name          String @unique @deny('update', true)
+
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PERMISSION:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PERMISSION:UPDATE']]])
+}

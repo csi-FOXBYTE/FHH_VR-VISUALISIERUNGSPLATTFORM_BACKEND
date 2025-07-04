@@ -1,0 +1,39 @@
+import "common"
+import "user"
+import "permissions"
+import "project"
+
+abstract model Layer {
+  name        String
+  description String  @default("")
+  sizeGB      Float
+  href        String?
+}
+
+
+model BaseLayer extends Layer, Base, Ownable {
+  /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
+  type               String
+  visibleForGroups   Group[]
+
+  includedInProjects Project[]
+
+  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:CREATE']]])
+  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:READ']]])
+  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:UPDATE']]])
+  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:DELETE']]])
+}
+
+model ProjectLayer extends Layer, Base, Ownable {
+  projectFiles       ProjectFile[]
+
+  includedInProjects Project[]     @relation("includedInProjects")
+
+  belongsToProject   Project       @relation(fields: [belongsToProjectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  belongsToProjectId String
+
+  @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:CREATE']]])
+  @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:READ']]])
+  @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:UPDATE']]])
+  @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:DELETE']]])
+}

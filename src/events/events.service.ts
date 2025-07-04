@@ -40,7 +40,7 @@ export class EventsService {
         startTime,
         status,
         title,
-        creator: {
+        owner: {
           connect: {
             email: (await this.authService.getSession()).user.email,
           },

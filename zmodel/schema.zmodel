@@ -1,0 +1,19 @@
+import "common"
+import "event"
+import "layer"
+import "permissions"
+import "user"
+
+plugin prisma {
+  provider = '@core/prisma'
+  output = '../prisma/schema.prisma'
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}

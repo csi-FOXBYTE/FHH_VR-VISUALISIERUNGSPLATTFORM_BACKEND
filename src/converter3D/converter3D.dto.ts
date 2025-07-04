@@ -10,8 +10,7 @@ export type UploadProjectObjectRequestDTO = Static<
 >;
 
 export const uploadProjectObjectResponseDTO = Type.Object({
-  buffer64: Type.String(),
-  modelMatrix: Type.Array(Type.Number()),
+  blobName: Type.String(),
 });
 export type UploadProjectObjectResponseDTO = Static<
   typeof uploadProjectObjectResponseDTO

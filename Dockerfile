@@ -34,7 +34,7 @@ COPY --from=deps /app/node_modules ./node_modules
 
 RUN --mount=type=secret,id=npmrc,target=/root/.npmrc \
     --mount=type=secret,id=env,target=.env \
-    corepack enable pnpm && pnpm zenstack generate && pnpm run build
+    corepack enable pnpm && pnpm zenstack-generate && pnpm run build
 
 EXPOSE 3000
 

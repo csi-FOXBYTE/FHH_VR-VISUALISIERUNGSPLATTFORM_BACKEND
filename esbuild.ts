@@ -9,7 +9,7 @@ export default async function startBuild() {
     logLevel: "silent",
     outdir: "build",
     bundle: false,
-    minify: true,
+    minify: false,
     platform: "node",
     splitting: true,
     format: "esm",

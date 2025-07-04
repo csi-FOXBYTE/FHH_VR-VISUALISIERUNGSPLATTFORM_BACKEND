@@ -1,0 +1,26 @@
+import "user"
+
+abstract model Base {
+  id        String   @id() @default(cuid()) @deny('update', true)
+  createdAt DateTime @default(now()) @deny('update', true)
+  updatedAt DateTime @updatedAt() @deny('update', true)
+}
+
+abstract model Ownable {
+  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ownerId String? @deny('update', true)
+
+  @@allow('all', auth().id == ownerId)
+}
+
+abstract model DirectedPoint extends Base, Ownable {
+  name        String
+  description String @default("")
+
+  startPointX Float
+  startPointY Float
+  startPointZ Float
+  endPointX   Float
+  endPointY   Float
+  endPointZ   Float
+}
