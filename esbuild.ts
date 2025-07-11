@@ -9,9 +9,10 @@ export default async function startBuild() {
     logLevel: "silent",
     outdir: "build",
     bundle: false,
-    minify: false,
+    minify: true,
     platform: "node",
     splitting: true,
+    treeShaking: true,
     format: "esm",
     sourcemap: true,
   });

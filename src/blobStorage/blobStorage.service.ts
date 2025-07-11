@@ -1,5 +1,9 @@
-import { BlobServiceClient } from "@azure/storage-blob";
+import {
+  BlobServiceClient,
+  BlockBlobUploadStreamOptions,
+} from "@azure/storage-blob";
 import { Service } from "@tganzhorn/fastify-modular";
+import { Readable } from "node:stream";
 
 @Service([])
 export class BlobStorageService {
@@ -12,8 +16,10 @@ export class BlobStorageService {
       throw Error("Please set AZURE_STORAGE_CONNECTION_STRING in your .env");
     }
 
-    this._blobServiceClient =
-      BlobServiceClient.fromConnectionString(connectionString);
+    this._blobServiceClient = BlobServiceClient.fromConnectionString(
+      connectionString,
+      {}
+    );
   }
 
   private async _getClient(containerName: string, blobName: string) {
@@ -53,10 +59,44 @@ export class BlobStorageService {
     return { blobName, ...response };
   }
 
+  async uploadStream(
+    data: Readable,
+    containerName: string,
+    blobName?: string,
+    onProgress?: BlockBlobUploadStreamOptions["onProgress"]
+  ) {
+    if (!blobName) blobName = await this._createBlobName(containerName);
+
+    const client = await this._getClient(containerName, blobName);
+
+    const response = await client.uploadStream(data, 4 * 1024 * 1024, 1, {
+      onProgress,
+    });
+
+    return { blobName, ...response };
+  }
+
   async downloadToBuffer(containerName: string, blobName: string) {
+    console.log({ containerName, blobName });
     const client = await this._getClient(containerName, blobName);
 
     return await client.downloadToBuffer();
+  }
+
+  async downloadToStream(containerName: string, blobName: string) {
+    const client = await this._getClient(containerName, blobName);
+
+    return await client.download();
+  }
+
+  async downloadToFile(
+    containerName: string,
+    blobName: string,
+    filePath: string
+  ) {
+    const client = await this._getClient(containerName, blobName);
+
+    return await client.downloadToFile(filePath);
   }
 
   async delete(containerName: string, blobName: string) {

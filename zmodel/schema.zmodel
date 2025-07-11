@@ -3,6 +3,7 @@ import "event"
 import "layer"
 import "permissions"
 import "user"
+import "config"
 
 plugin prisma {
   provider = '@core/prisma'

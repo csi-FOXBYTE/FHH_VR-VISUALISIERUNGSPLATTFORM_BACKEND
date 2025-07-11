@@ -1,3 +1,4 @@
+// @ts-expect-error has no types
 import assimpjs from "assimpjs";
 import { rm, writeFile } from "fs/promises";
 import { temporaryFile } from "tempy";

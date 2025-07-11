@@ -38,7 +38,7 @@ export default function convertPositions(
 
       const mesh = node.getMesh();
 
-      if (!mesh) continue;//
+      if (!mesh) continue;
 
       const tempVec = new ThreeVector3();
 
@@ -100,7 +100,7 @@ export default function convertPositions(
       -nodeOffset.z,
       nodeOffset.y,
     ]);
-    
+
     const carto = new Cartographic(
       (transformedCarto[0] / 180) * Math.PI,
       (transformedCarto[1] / 180) * Math.PI,
@@ -111,8 +111,6 @@ export default function convertPositions(
       carto,
       new Cartesian3()
     );
-
-    console.log(transformedCarto);
 
     const enuToECEF = Transforms.eastNorthUpToFixedFrame(anchorCartesian);
 

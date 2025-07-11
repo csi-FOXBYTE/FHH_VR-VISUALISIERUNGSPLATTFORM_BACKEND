@@ -16,6 +16,8 @@ export class DbService {
       try {
         const session = await this.authService.getSession();
 
+        if (!session) throw new Error("Unauthenticated!");
+
         resolve(enhance(prisma, session));
       } catch (e) {
         return reject(e);

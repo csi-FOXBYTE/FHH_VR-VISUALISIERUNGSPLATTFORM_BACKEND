@@ -62,7 +62,7 @@ export async function convertIfcBuffer(
             break;
         }
       default:
-        throw new Error(`Did not find distributable for ${platform}/${arch}`);
+        throw new Error(`Did not find distributable for ${platform}/${arch}!`);
     }
 
     // Call IfcConvert.exe on the temporary input, writing to temporary output

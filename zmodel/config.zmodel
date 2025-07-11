@@ -1,0 +1,18 @@
+import "common"
+
+model Configuration extends Base {
+    defaultEPSG                     String
+
+    globalStartPointX               Float
+    globalStartPointY               Float
+    globalStartPointZ               Float
+
+    maxParallelFileConversions      Float
+    maxParallelBaseLayerConversions Float
+
+    invitationEmailText             String @db.Text
+
+    localProcessorFolder            String
+
+    @@allow('all', true)
+}

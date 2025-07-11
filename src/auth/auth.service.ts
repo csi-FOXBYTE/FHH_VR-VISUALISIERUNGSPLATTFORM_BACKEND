@@ -3,8 +3,6 @@ import {
   RequestStore,
   Service,
 } from "@tganzhorn/fastify-modular";
-import { prisma } from "../prisma/index.js";
-import { authOptions } from "./authOptions.js";
 import { getSession } from "./index.js";
 
 @Service([ContextService])
@@ -27,38 +25,16 @@ export class AuthService extends RequestStore<{
   }
 
   async getSession() {
-    if (!this.requestStore.session) {
-      const rawSession = await getSession(
-        this.contextService.ctx.request,
-        authOptions
-      );
+    if (!this.contextService.ctx.request)
+      throw new Error("No request present!");
 
-      this.requestStore.session = {
-        user: await prisma.user.findFirstOrThrow({
-          where: {
-            email: rawSession?.user.email,
-          },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            assignedGroups: {
-              select: {
-                assignedRoles: {
-                  select: {
-                    assignedPermissions: {
-                      select: {
-                        name: true,
-                        id: true,
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        }),
-      };
+    if (!this.contextService.ctx.request.headers.authorization) return null;
+
+    if (!this.requestStore.session) {
+      this.requestStore.session = await getSession(
+        this.contextService.ctx.request,
+        this.contextService.ctx.cache
+      );
     }
 
     return this.requestStore.session!;

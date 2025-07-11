@@ -2,3 +2,4 @@ bin/ifcConvert/ifc-lin-x64 filter=lfs diff=lfs merge=lfs -text
 bin/ifcConvert/ifc-mac-m1-x64 filter=lfs diff=lfs merge=lfs -text
 bin/ifcConvert/ifc-mac-x64 filter=lfs diff=lfs merge=lfs -text
 bin/ifcConvert/ifc-win-x64.exe filter=lfs diff=lfs merge=lfs -text
+*.jar filter=lfs diff=lfs merge=lfs -text

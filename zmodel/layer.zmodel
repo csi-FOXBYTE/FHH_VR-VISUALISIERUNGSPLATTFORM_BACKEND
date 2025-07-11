@@ -16,6 +16,10 @@ model BaseLayer extends Layer, Base, Ownable {
   type               String
   visibleForGroups   Group[]
 
+  /// Can be one of PENDING | FAILED | COMPLETED
+  status             String    @default("COMPLETED")
+  progress           Float     @default(0)
+
   includedInProjects Project[]
 
   @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:CREATE']]])

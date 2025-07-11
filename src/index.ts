@@ -1,23 +1,43 @@
+import "dotenv";
+import fastifyCors from "@fastify/cors";
+import fastifyHelmet from "@fastify/helmet";
 import fastifyMultipart from "@fastify/multipart";
+import fastifyRateLimit, { } from "@fastify/rate-limit";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
+import fastifyUnderPressure from "@fastify/under-pressure";
 import { registerControllers } from "@tganzhorn/fastify-modular";
-import "dotenv";
 import Fastify from "fastify";
 import json from "../package.json" with { type: "json" };
 import { registerAuth } from "./auth/index.js";
 import { Converter3DController } from "./converter3D/converter3D.controller.js";
 import { EventsController } from "./events/events.controller.js";
+import { StatsController } from "./stats/stats.controller.js";
+import { createCache } from "cache-manager";
+import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
+
+injectPinoLogger();
 
 const fastify = Fastify({
-  logger: true,
+  logger: loggerOptions,
 });
 
+process.on("unhandledRejection", (reason) => {
+  fastify.log.error({ err: reason, type: "UNHANDLED_REJECTION" });
+});
+
+fastify.register(fastifyHelmet, {});
+fastify.register(fastifyRateLimit, {
+  max: 50,
+  timeWindow: "1 minute",
+});
+fastify.register(fastifyUnderPressure, {});
+fastify.register(fastifyCors, {});
+
 fastify.register(fastifyMultipart, {
-  attachFieldsToBody: "keyValues",
   limits: {
-    fileSize: 1_000_000_000,
-    files: 1,
+    fileSize: 50_000_000_000, // 50 gb
+    files: 10,
   },
 });
 
@@ -58,9 +78,12 @@ fastify.register(fastifySwaggerUi, {
   transformSpecificationClone: true,
 });
 
-registerAuth(fastify);
+const cache = createCache();
 
-registerControllers(fastify, { controllers: [EventsController, Converter3DController]});
+registerControllers(fastify, { cache, controllers: [EventsController, Converter3DController, StatsController], bullMqConnection: {
+  host: "localhost",
+  port: 6379,
+},});
 
 fastify.route({
   method: "GET",
@@ -72,6 +95,7 @@ fastify.route({
 
 (async () => {
   try {
+    await registerAuth(fastify, cache);
     await fastify.ready();
     fastify.swagger();
     await fastify.listen({
@@ -83,3 +107,4 @@ fastify.route({
     process.exit(1);
   }
 })();
+

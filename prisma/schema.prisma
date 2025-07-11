@@ -211,6 +211,9 @@ model BaseLayer {
   /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
   type               String
   visibleForGroups   Group[]
+  /// Can be one of PENDING | FAILED | COMPLETED
+  status             String    @default("COMPLETED")
+  progress           Float     @default(0)
   includedInProjects Project[]
 }
 
@@ -258,4 +261,18 @@ model EventAttendee {
   role    String @default("GUEST")
 
   @@id([eventId, userId])
+}
+
+model Configuration {
+  id                              String   @id() @default(cuid())
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt()
+  defaultEPSG                     String
+  globalStartPointX               Float
+  globalStartPointY               Float
+  globalStartPointZ               Float
+  maxParallelFileConversions      Float
+  maxParallelBaseLayerConversions Float
+  invitationEmailText             String   @db.Text()
+  localProcessorFolder            String
 }
