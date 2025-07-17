@@ -10,16 +10,30 @@ import { mkdir, rm } from "fs/promises";
 import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
-import { getBlockBlobClient } from "../../lib/BlockBlobClient.js";
 import { cityGMLToCityJSON } from "../../lib/CityGMLTools.js";
 import { injectPinoLogger } from "../../lib/pino.js";
-import { Convert3DTilesWorkerJob } from "../workers/convert3DTiles.worker.js";
+import { Convert3DTilesWorkerJob } from "./convert3DTiles.worker.js";
+import { getRegistries } from "../../registries.js";
+import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
+
+async function initializeContainers() {
+  const { serviceRegistry, workerRegistry } = await getRegistries();
+
+  return {
+    services: serviceRegistry.resolve(),
+    queues: { get: workerRegistry.getQueue.bind(workerRegistry) },
+  };
+}
 
 injectPinoLogger();
 
 export default async function run(
   job: Convert3DTilesWorkerJob
 ): Promise<Convert3DTilesWorkerJob["returnValue"]> {
+  const { services } = await initializeContainers();
+
+  const blobStorageService = await getBlobStorageService(services);
+
   console.log("Converting 3D Tiles...");
   const rootPath = path.join(job.data.localProcessorFolder, job.data.blobName);
 
@@ -27,11 +41,6 @@ export default async function run(
     await job.updateProgress(progress);
     console.log({ progress });
   }, 1_000);
-
-  const zipBlockBlobClient = await getBlockBlobClient(
-    job.data.containerName,
-    job.data.blobName
-  );
 
   try {
     const zipPath = path.join(rootPath, job.data.blobName + ".zip");
@@ -42,7 +51,11 @@ export default async function run(
 
     await mkdir(rootPath, { recursive: true });
 
-    await zipBlockBlobClient.downloadToFile(zipPath);
+    await blobStorageService.downloadToFile(
+      job.data.containerName,
+      job.data.blobName,
+      zipPath
+    );
 
     await throttledProgress(0.05);
 
@@ -91,12 +104,11 @@ export default async function run(
     for (const file of files) {
       const readStream = createReadStream(path.join(tilesPath, file));
 
-      const blockBlobClient = await getBlockBlobClient(
+      await blobStorageService.uploadStream(
+        readStream,
         `tileset-${job.data.blobName}`,
         `${file}`
       );
-
-      await blockBlobClient.uploadStream(readStream);
 
       uploadedFiles++;
 
@@ -105,13 +117,19 @@ export default async function run(
 
     // cleanup
     try {
-      await zipBlockBlobClient.delete();
+      await blobStorageService.delete(
+        job.data.containerName,
+        job.data.blobName
+      );
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
   } catch (e) {
     console.error(e);
     try {
-      await zipBlockBlobClient.delete();
+      await blobStorageService.delete(
+        job.data.containerName,
+        job.data.blobName
+      );
       await rm(rootPath, { force: true, recursive: true });
     } catch {}
     throw e;

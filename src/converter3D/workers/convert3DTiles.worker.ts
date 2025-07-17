@@ -5,6 +5,7 @@ import {
 } from "@csi-foxbyte/fastify-toab";
 import { SandboxedJob } from "bullmq";
 import { getConverter3DService } from "../converter3D.service.js";
+import defaultConnection from "../../connection.js";
 
 const convert3DTilesWorker = createWorker()
   .queue("convert3DTiles-queue")
@@ -63,10 +64,10 @@ const convert3DTilesWorker = createWorker()
     removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
   })
-  .connection({})
+  .connection(defaultConnection)
   .processor(
     new URL(
-      "../sandboxedWorkers/convert3DTiles.sandboxedWorker.js",
+      "./convert3DTiles.sandboxedWorker.js",
       import.meta.url
     )
   );

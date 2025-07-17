@@ -6,6 +6,7 @@ import {
 import { SandboxedJob } from "bullmq";
 import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
 import { getConverter3DService } from "../converter3D.service.js";
+import defaultConnection from "../../connection.js";
 
 const convertProjectModelWorker = createWorker()
   .queue("convertProjectModel-queue")
@@ -47,10 +48,10 @@ const convertProjectModelWorker = createWorker()
     removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
   })
-  .connection({})
+  .connection(defaultConnection)
   .processor(
     new URL(
-      "../sandboxedWorkers/convertProjectModel.sandboxedWorker.js",
+      "./convertProjectModel.sandboxedWorker.js",
       import.meta.url
     )
   );

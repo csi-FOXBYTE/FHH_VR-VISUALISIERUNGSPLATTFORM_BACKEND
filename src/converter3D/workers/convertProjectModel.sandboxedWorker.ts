@@ -20,9 +20,19 @@ import sharp from "sharp";
 import { Matrix4 } from "three";
 // @ts-expect-error has no types
 import draco3d from "draco3dgltf";
-import { getBlockBlobClient } from "../../lib/BlockBlobClient.js";
 import { injectPinoLogger } from "../../lib/pino.js";
-import { ConvertProjectModelWorkerJob } from "../workers/convertProjectModel.worker.js";
+import { ConvertProjectModelWorkerJob } from "./convertProjectModel.worker.js";
+import { getRegistries } from "../../registries.js";
+import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
+
+async function initializeContainers() {
+  const { serviceRegistry, workerRegistry } = await getRegistries();
+
+  return {
+    services: serviceRegistry.resolve(),
+    queues: { get: workerRegistry.getQueue.bind(workerRegistry) },
+  };
+}
 
 injectPinoLogger();
 
@@ -31,17 +41,17 @@ Logger.DEFAULT_INSTANCE = new Logger(Logger.Verbosity.SILENT);
 export default async function run(
   job: ConvertProjectModelWorkerJob
 ): Promise<ConvertProjectModelWorkerJob["returnValue"]> {
-  console.log("Converting Project Model...");
+  const { services } = await initializeContainers();
 
-  const fileBlockBlobClient = await getBlockBlobClient(
-    job.data.containerName,
-    job.data.blobName
-  );
+  const blobStorageService = await getBlobStorageService(services);
 
   try {
     await job.updateProgress(0);
 
-    const file = await fileBlockBlobClient.downloadToBuffer();
+    const file = await blobStorageService.downloadToBuffer(
+      job.data.containerName,
+      job.data.blobName
+    );
 
     await job.updateProgress(0.25);
 
@@ -131,8 +141,10 @@ export default async function run(
     );
 
     // overwrite blob
-    await fileBlockBlobClient.uploadData(
-      Buffer.from(await io.writeBinary(document))
+    await blobStorageService.uploadData(
+      Buffer.from(await io.writeBinary(document)),
+      job.data.containerName,
+      job.data.blobName
     );
 
     await job.updateProgress(1);
@@ -144,7 +156,7 @@ export default async function run(
     };
   } catch (e) {
     console.error(e);
-    await fileBlockBlobClient.delete();
+    await blobStorageService.delete(job.data.containerName, job.data.blobName);
     throw e;
   }
 }

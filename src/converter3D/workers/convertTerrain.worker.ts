@@ -2,10 +2,10 @@ import {
   createWorker,
   QueueContainer,
   WorkerContainer,
-  Job,
 } from "@csi-foxbyte/fastify-toab";
 import { SandboxedJob } from "bullmq";
 import { getConverter3DService } from "../converter3D.service.js";
+import defaultConnection from "../../connection.js";
 
 const convertTerrainWorker = createWorker()
   .queue("convertTerrain-queue")
@@ -64,10 +64,10 @@ const convertTerrainWorker = createWorker()
     removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
   })
-  .connection({})
+  .connection(defaultConnection)
   .processor(
     new URL(
-      "../sandboxedWorkers/convertTerrain.sandboxedWorker.js",
+      "./convertTerrain.sandboxedWorker.js",
       import.meta.url
     )
   );
