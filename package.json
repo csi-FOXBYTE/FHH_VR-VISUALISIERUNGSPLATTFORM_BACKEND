@@ -27,7 +27,7 @@
     "@bull-board/api": "^6.11.0",
     "@bull-board/fastify": "^6.11.0",
     "@csi-foxbyte/cityjson-to-3d-tiles": "^0.0.2",
-    "@csi-foxbyte/fastify-toab": "file:C:/Users/tga/Documents/Projekte/fastify-structured/csi-foxbyte-fastify-toab-0.0.4.tgz",
+    "@csi-foxbyte/fastify-toab": "^0.0.5",
     "@csi-foxbyte/mesh-dem-to-terrain": "^0.0.1",
     "@csi-foxbyte/prisma-mssql-realtime-extension": "^0.0.3",
     "@fastify/cors": "^11.0.1",

@@ -24,8 +24,8 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)
       '@csi-foxbyte/fastify-toab':
-        specifier: file:C:/Users/tga/Documents/Projekte/fastify-structured/csi-foxbyte-fastify-toab-0.0.4.tgz
-        version: file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.4.tgz(bullmq@5.56.4)
+        specifier: ^0.0.5
+        version: 0.0.5(bullmq@5.56.4)
       '@csi-foxbyte/mesh-dem-to-terrain':
         specifier: ^0.0.1
         version: 0.0.1
@@ -318,9 +318,8 @@ packages:
   '@csi-foxbyte/cityjson-to-3d-tiles@0.0.2':
     resolution: {integrity: sha512-YXQF7C49kXrzs/dSSVZnPKUOydapx9cAIXPX4LMo4bGFJcjVCC4LAgb9IOkYS671YmtgU2yJTFrF7ol0FwrYaA==}
 
-  '@csi-foxbyte/fastify-toab@file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.4.tgz':
-    resolution: {integrity: sha512-lC0Et86svdNkGS7sOf1o/e7UaB6C+ZIqnr/gojYjWFiV4kkK56BD4gY9MDNxMD3eDY/J95H5lbzFvLKri3vmzw==, tarball: file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.4.tgz}
-    version: 0.0.4
+  '@csi-foxbyte/fastify-toab@0.0.5':
+    resolution: {integrity: sha512-IJ/Dx8HT20eHNzZn6e391Lx/U0v5zeL7HuTzAuLxJi+iW65CPGiKsseAgt6cZDDiYxawNjHPpFkmDeB0f8kmRQ==}
     hasBin: true
     peerDependencies:
       bullmq: ^5.0.0
@@ -4127,7 +4126,7 @@ snapshots:
       - supports-color
       - yaml
 
-  '@csi-foxbyte/fastify-toab@file:../../fastify-structured/csi-foxbyte-fastify-toab-0.0.4.tgz(bullmq@5.56.4)':
+  '@csi-foxbyte/fastify-toab@0.0.5(bullmq@5.56.4)':
     dependencies:
       bullmq: 5.56.4
       commander: 14.0.0
