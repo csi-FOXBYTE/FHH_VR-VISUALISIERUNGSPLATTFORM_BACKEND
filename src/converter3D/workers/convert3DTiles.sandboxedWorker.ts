@@ -84,7 +84,7 @@ export default async function run(
       "rgbTexture",
       async (progress) =>
         await throttledProgress((0.15 + progress * 0.3) * 100),
-      { threadCount: 4 }
+      { threadCount: job.data.threadCount }
     );
     job.log("Generated tile database.");
 
@@ -99,7 +99,7 @@ export default async function run(
         await throttledProgress((0.45 + progress * 0.3) * 100);
       },
       {
-        threadCount: 12,
+        threadCount: job.data.threadCount,
       }
     );
     job.log("Generated 3d tiles from database.");

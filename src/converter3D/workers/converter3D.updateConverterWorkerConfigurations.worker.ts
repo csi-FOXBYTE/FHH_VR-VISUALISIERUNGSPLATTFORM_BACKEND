@@ -11,10 +11,15 @@ import { getConvertTerrainWorker } from "./convertTerrain.worker.js";
 import { getConvert3DTilesWorker } from "./convert3DTiles.worker.js";
 
 const updateConverterWorkerConfigurationsWorker = createWorker()
-  .queue("updateConverterWorkerConfigurations-queue")
+  .queue("{updateConverterWorkerConfigurations-queue}")
   .job<Job<void, void>>()
+  .upsertJobScheduler("updateConverterWorkerConfigurationsScheduler", {
+    every: 5 * 60 * 1000, // every 5 minutes
+  })
   .connection(defaultConnection)
   .processor(async (_, { services, workers }) => {
+    if (process.env.DISABLED_WORKERS === "true") return;
+
     const configurationService = await getConfigurationService(services);
 
     const convertProjectModelWorker = getConvertProjectModelWorker(workers);

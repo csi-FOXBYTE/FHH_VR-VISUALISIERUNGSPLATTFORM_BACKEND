@@ -1,7 +1,7 @@
 import { ConnectionOptions } from "bullmq";
 import { Cluster } from "ioredis";
 
-function parseRedisConnectionString(uri: string) {
+export function parseRedisConnectionString(uri: string) {
   // Split protocol://rest
   const [proto, rest] = uri.split("://");
   const tls = proto === "rediss";

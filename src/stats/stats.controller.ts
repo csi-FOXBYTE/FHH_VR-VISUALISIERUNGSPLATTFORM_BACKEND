@@ -26,7 +26,7 @@ statsController
     })
   )
   .handler(async () => {
-    return { memoryUsage: process.memoryUsage() };
+    return { memoryUsage: process.memoryUsage(),  };
   });
 
 /*

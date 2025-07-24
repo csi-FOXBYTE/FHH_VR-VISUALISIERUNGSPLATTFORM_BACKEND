@@ -17,6 +17,7 @@ const convert3DTilesWorker = createWorker()
         id: string;
         srcSRS: string;
         localProcessorFolder: string;
+        threadCount: number;
       },
       void
     >
@@ -24,11 +25,7 @@ const convert3DTilesWorker = createWorker()
   .on("active", async ({ services }, job) => {
     const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(
-      job.data.id,
-      0,
-      "ACTIVE"
-    );
+    await converter3DService.updateBaseLayerStatus(job.data.id, 0, "ACTIVE");
   })
   .on("progress", async ({ services }, job) => {
     const converter3DService = await getConverter3DService(services);
@@ -42,11 +39,7 @@ const convert3DTilesWorker = createWorker()
   .on("completed", async ({ services }, job) => {
     const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(
-      job.data.id,
-      1,
-      "COMPLETED"
-    );
+    await converter3DService.updateBaseLayerStatus(job.data.id, 1, "COMPLETED");
   })
   .on("failed", async ({ services }, job) => {
     if (!job) return;

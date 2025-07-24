@@ -17,6 +17,7 @@ const convertTerrainWorker = createWorker()
         id: string;
         containerName: string;
         localProcessorFolder: string;
+        threadCount: number;
       },
       void
     >
@@ -45,7 +46,6 @@ const convertTerrainWorker = createWorker()
   })
   .on("completed", async ({ services }, job) => {
     try {
-      console.log(job);
       const converter3DService = await getConverter3DService(services);
 
       await converter3DService.updateBaseLayerStatus(

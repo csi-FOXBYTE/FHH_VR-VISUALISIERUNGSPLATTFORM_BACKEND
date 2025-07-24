@@ -18,23 +18,29 @@ const configurationService = createService(
         return await cacheService.wrap(
           "__config__",
           async () => {
-            return await dbService.rawClient.configuration.findFirstOrThrow({
-              select: {
-                defaultEPSG: true,
-                globalStartPointX: true,
-                globalStartPointY: true,
-                globalStartPointZ: true,
-                invitationEmailText: true,
-                localProcessorFolder: true,
-                maxParallelBaseLayerConversions: true,
-                maxParallelFileConversions: true,
-              },
-            });
+            const config =
+              await dbService.rawClient.configuration.findFirstOrThrow({
+                select: {
+                  defaultEPSG: true,
+                  globalStartPointX: true,
+                  globalStartPointY: true,
+                  globalStartPointZ: true,
+                  invitationEmailText: true,
+                  localProcessorFolder: true,
+                  maxParallelBaseLayerConversions: true,
+                  maxParallelFileConversions: true,
+                },
+              });
+
+            return config;
           },
-          300_000
-        ); // hold in cache for 5 minutes
+          60_000
+        ); // hold in cache for 1 minute
       },
     };
+  },
+  {
+    buildTime: "INSTANT",
   }
 );
 

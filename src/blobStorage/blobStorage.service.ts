@@ -82,10 +82,7 @@ const blobStorageService = createService("blobStorage", async ({ queues }) => {
           permissions,
           expiresOn: dayjs().add(2, "hours").toDate(),
         },
-        new StorageSharedKeyCredential(
-          blobServiceClient.credential.accountName,
-          blobServiceClient.credential.accountKey
-        )
+        blobServiceClient.credential as StorageSharedKeyCredential
       );
 
       return `${client.url}?${sasToken.toString()}`;
