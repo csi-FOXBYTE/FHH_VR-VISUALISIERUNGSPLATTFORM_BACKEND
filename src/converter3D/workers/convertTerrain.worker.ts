@@ -23,21 +23,19 @@ const convertTerrainWorker = createWorker()
   >()
   .on("active", async ({ services }, job) => {
     try {
-      console.log(job);
       const converter3DService = await getConverter3DService(services);
 
-      await converter3DService.updateBaseLayerStatus(job.id!, 0, "ACTIVE");
+      await converter3DService.updateBaseLayerStatus(job.data.id, 0, "ACTIVE");
     } catch (e) {
       console.error(e);
     }
   })
   .on("progress", async ({ services }, job) => {
     try {
-      console.log(job);
       const converter3DService = await getConverter3DService(services);
 
       await converter3DService.updateBaseLayerStatus(
-        job.id!,
+        job.data.id,
         +job.progress.valueOf(),
         "ACTIVE"
       );
@@ -50,20 +48,23 @@ const convertTerrainWorker = createWorker()
       console.log(job);
       const converter3DService = await getConverter3DService(services);
 
-      await converter3DService.updateBaseLayerStatus(job.id!, 1, "COMPLETED");
+      await converter3DService.updateBaseLayerStatus(
+        job.data.id,
+        1,
+        "COMPLETED"
+      );
     } catch (e) {
       console.error(e);
     }
   })
   .on("failed", async ({ services }, job) => {
     try {
-      console.log(job);
       if (!job) return;
 
       const converter3DService = await getConverter3DService(services);
 
       await converter3DService.updateBaseLayerStatus(
-        job.id!,
+        job.data.id,
         +job.progress.valueOf(),
         "FAILED"
       );

@@ -25,7 +25,7 @@ const convert3DTilesWorker = createWorker()
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.id!,
+      job.data.id,
       0,
       "ACTIVE"
     );
@@ -34,17 +34,16 @@ const convert3DTilesWorker = createWorker()
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.id!,
+      job.data.id,
       +job.progress.valueOf(),
       "ACTIVE"
     );
   })
   .on("completed", async ({ services }, job) => {
-    console.log(job.progress);
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.id!,
+      job.data.id,
       1,
       "COMPLETED"
     );
@@ -55,7 +54,7 @@ const convert3DTilesWorker = createWorker()
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.updateBaseLayerStatus(
-      job.id!,
+      job.data.id,
       +job.progress.valueOf(),
       "FAILED"
     );

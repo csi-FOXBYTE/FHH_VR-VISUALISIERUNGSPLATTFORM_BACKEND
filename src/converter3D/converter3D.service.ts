@@ -15,7 +15,6 @@ import { getAuthService } from "../auth/auth.service.js";
 const converter3DService = createService(
   "converter3D",
   async ({ queues, services }) => {
-    console.log({ queues, services });
     const tile3DConverterQueue = getConvert3DTilesWorkerQueue(queues);
     const projectModelConverterQueue =
       getConvertProjectModelWorkerQueue(queues);

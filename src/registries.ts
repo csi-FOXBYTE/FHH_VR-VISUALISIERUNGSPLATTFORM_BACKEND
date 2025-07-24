@@ -17,6 +17,7 @@ import { dbService } from "./db/db.service.js";
 import { eventsService } from "./events/events.service.js";
 import { deleteBlobWorker } from "./blobStorage/workers/deleteBlob.worker.js";
 import { convert3DTilesWorker } from "./converter3D/workers/convert3DTiles.worker.js";
+import { updateConverterWorkerConfigurationsWorker } from "./converter3D/workers/converter3D.updateConverterWorkerConfigurations.worker.js";
 import { convertProjectModelWorker } from "./converter3D/workers/convertProjectModel.worker.js";
 import { convertTerrainWorker } from "./converter3D/workers/convertTerrain.worker.js";
 import { converter3DController } from "./converter3D/converter3D.controller.js";
@@ -41,6 +42,7 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   const workerRegistry = new WorkerRegistry(serviceRegistry);
   await workerRegistry.register(deleteBlobWorker, dontInitializeWorkers);
   await workerRegistry.register(convert3DTilesWorker, dontInitializeWorkers);
+  await workerRegistry.register(updateConverterWorkerConfigurationsWorker, dontInitializeWorkers);
   await workerRegistry.register(convertProjectModelWorker, dontInitializeWorkers);
   await workerRegistry.register(convertTerrainWorker, dontInitializeWorkers);
   workerRegistryRef.current = workerRegistry;

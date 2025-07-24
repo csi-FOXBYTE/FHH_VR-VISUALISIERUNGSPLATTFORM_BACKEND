@@ -7,6 +7,7 @@
   "scripts": {
     "zenstack-generate": "zenstack generate --schema zmodel/schema.zmodel",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "oxlint && eslint",
     "dev": "tsx dev.ts",
     "build": "tsx build.ts",
     "publish:docker": "docker build -t fhhvr-webbackend:0.0.15 . --secret id=npmrc,src=%USERPROFILE%/.npmrc --secret id=env,src=.env && docker tag fhhvr-webbackend:0.0.15 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.0.15 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.0.15"
@@ -56,6 +57,7 @@
   "devDependencies": {
     "@auth/core": "^0.39.1",
     "@auth/prisma-adapter": "^2.9.1",
+    "@eslint-recommended/eslint-config": "^28.0.0",
     "@fastify/auth": "^5.0.2",
     "@fastify/cookie": "^11.0.2",
     "@fastify/session": "^11.1.0",
@@ -74,7 +76,9 @@
     "draco3dgltf": "^1.5.7",
     "esbuild": "^0.25.5",
     "esbuild-plugin-pino": "^2.2.2",
+    "eslint-plugin-oxlint": "^1.8.0",
     "meshoptimizer": "^0.23.0",
+    "oxlint": "^1.8.0",
     "pino-pretty": "^13.0.0",
     "prisma": "6.8.x",
     "proj4": "^2.17.0",

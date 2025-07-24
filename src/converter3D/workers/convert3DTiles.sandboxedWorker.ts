@@ -3,18 +3,17 @@ import {
   generate3DTilesFromTileDatabase,
   generateTileDatabaseFromCityJSON,
 } from "@csi-foxbyte/cityjson-to-3d-tiles";
-import { JobProgress } from "bullmq";
 import "dotenv";
 import { createReadStream } from "fs";
 import { mkdir, rm } from "fs/promises";
 import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
+import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
 import { cityGMLToCityJSON } from "../../lib/CityGMLTools.js";
 import { injectPinoLogger } from "../../lib/pino.js";
-import { Convert3DTilesWorkerJob } from "./convert3DTiles.worker.js";
 import { getRegistries } from "../../registries.js";
-import { getBlobStorageService } from "../../blobStorage/blobStorage.service.js";
+import { Convert3DTilesWorkerJob } from "./convert3DTiles.worker.js";
 
 async function initializeContainers() {
   const { serviceRegistry, workerRegistry } = await getRegistries();
