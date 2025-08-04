@@ -3,9 +3,9 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
-import { prisma } from "../prisma/index.js";
 import { getCacheService } from "../cache/cache.service.js";
 import { jwtDecrypt } from "jose";
+import { getDbService } from "../db/db.service.js";
 
 const authService = createService(
   "auth",
@@ -19,8 +19,9 @@ const authService = createService(
       sessionToken: string;
       userId: string;
     }) {
+      const dbService = await getDbService(services);
       try {
-        const user = await prisma.user.findFirstOrThrow({
+        const user = await dbService.rawClient.user.findFirstOrThrow({
           where: {
             id: userId,
             sessions: {
@@ -82,7 +83,7 @@ const authService = createService(
             30_000 // cache for 30 seconds
           );
         } catch (e) {
-          console.error(e);
+          console.error(e, new Date().getTime());
           return null;
         }
       },

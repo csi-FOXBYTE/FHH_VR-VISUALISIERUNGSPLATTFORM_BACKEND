@@ -4,10 +4,7 @@ import "permissions"
 import "project"
 
 abstract model Layer {
-  name        String
-  description String  @default("")
-  sizeGB      Float
-  href        String?
+  name String
 }
 
 
@@ -20,6 +17,15 @@ model BaseLayer extends Layer, Base, Ownable {
   status             String    @default("COMPLETED")
   progress           Float     @default(0)
 
+  sizeGB             Float
+
+  description        String    @default("")
+
+  /// A layer can either be stored in azure or externally.
+  href               String?
+  /// Containername is only used when its stored in azure.
+  containerName      String?
+
   includedInProjects Project[]
 
   @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'BASE_LAYER:CREATE']]])
@@ -29,12 +35,14 @@ model BaseLayer extends Layer, Base, Ownable {
 }
 
 model ProjectLayer extends Layer, Base, Ownable {
-  projectFiles       ProjectFile[]
+  projectModels      ProjectModel[]
+  clippingPolygons   ClippingPolygon[]
 
-  includedInProjects Project[]     @relation("includedInProjects")
+  includedInProjects Project[]         @relation("includedInProjects")
+  associatedVariants Variant[]
 
-  belongsToProject   Project       @relation(fields: [belongsToProjectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  belongsToProjectId String
+  project            Project           @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projectId          String
 
   @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:CREATE']]])
   @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_LAYER:READ']]])

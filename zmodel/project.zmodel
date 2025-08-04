@@ -5,17 +5,19 @@ import "event"
 import "layer"
 
 model Project extends Base, Ownable {
-    title                 String            @db.Text
-    description           String            @db.Text
+    title                 String          @db.Text
+    description           String          @db.Text
 
     visibleForGroups      Group[]
-    visibleForUsers       User[]            @relation("visibleForUsers")
+    visibleForUsers       User[]          @relation("visibleForUsers")
 
     startingPoints        StartingPoint[]
-    clippingPolygons      ClippingPolygon[]
     includedBaseLayers    BaseLayer[]
-    includedProjectLayers ProjectLayer[]    @relation("includedInProjects")
+    includedProjectLayers ProjectLayer[]  @relation("includedInProjects")
     projectLayers         ProjectLayer[]
+    variants              Variant[]
+
+    img                   String?         @db.Text
 
     events                Event[]
 
@@ -26,20 +28,23 @@ model Project extends Base, Ownable {
 }
 
 model ClippingPolygon extends Base, Ownable {
-    name      String
-    /// Comma separated point list [x0, y0, z0, ..., xn, yn, zn]
-    points    String  @db.Text
-    project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-    projectId String
+    name           String
+    /// Comma separated point list x0,y0,z0,...,xn,yn,zn
+    points         String       @db.Text
 
-    @@allow('all', project.owner.id == auth().id)
+    projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id])
+    projectLayerId String
+
+    affectsTerrain Boolean      @default(false)
+
+    @@allow('all', projectLayer.project.owner.id == auth().id)
     @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:CREATE']]])
     @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:READ']]])
     @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:UPDATE']]])
     @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'CLIPPING_POLYGON:DELETE']]])
 }
 
-model ProjectFile extends Base {
+model ProjectModel extends Base {
     name           String
     href           String
     /// JSON object of all assigned meta data
@@ -48,7 +53,20 @@ model ProjectFile extends Base {
     projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
     projectLayerId String
 
-    @@allow('all', projectLayer.belongsToProject.owner.id == auth().id)
+    rotationX      Float
+    rotationY      Float
+    rotationZ      Float
+    rotationW      Float
+
+    scaleX         Float
+    scaleY         Float
+    scaleZ         Float
+
+    translationX   Float
+    translationY   Float
+    translationZ   Float
+
+    @@allow('all', projectLayer.project.owner.id == auth().id)
     @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:CREATE']]])
     @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:READ']]])
     @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'PROJECT_FILE:UPDATE']]])
@@ -67,10 +85,27 @@ model VisualAxis extends DirectedPoint {
 model StartingPoint extends DirectedPoint {
     project   Project? @relation(fields: [projectId], references: [id])
     projectId String?
+    img       String   @db.Text
 
     @@allow('all', auth().id == project.owner.id)
     @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:CREATE']]])
     @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:READ']]])
     @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:UPDATE']]])
     @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:DELETE']]])
+}
+
+model Variant extends Base {
+    project       Project        @relation(fields: [projectId], references: [id])
+    projectId     String
+
+    name          String
+    description   String
+
+    projectLayers ProjectLayer[]
+
+    @@allow('all', auth().id == project.owner.id)
+    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:CREATE']]])
+    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:READ']]])
+    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:UPDATE']]])
+    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:DELETE']]])
 }

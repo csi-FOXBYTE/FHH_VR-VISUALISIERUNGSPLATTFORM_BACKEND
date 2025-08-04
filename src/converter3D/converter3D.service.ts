@@ -3,14 +3,14 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
+import { getAuthService } from "../auth/auth.service.js";
+import { getBlobStorageService } from "../blobStorage/blobStorage.service.js";
+import { getConfigurationService } from "../configuration/configuration.service.js";
+import { getDbService } from "../db/db.service.js";
 import { getConvert3DTilesWorkerQueue } from "./workers/convert3DTiles.worker.js";
 import { getConvertProjectModelWorkerQueue } from "./workers/convertProjectModel.worker.js";
 import { getConvertTerrainWorkerQueue } from "./workers/convertTerrain.worker.js";
-import { getBlobStorageService } from "../blobStorage/blobStorage.service.js";
-import { Readable } from "stream";
-import { getConfigurationService } from "../configuration/configuration.service.js";
-import { getDbService } from "../db/db.service.js";
-import { getAuthService } from "../auth/auth.service.js";
+import { Readable } from "node:stream";
 
 const converter3DService = createService(
   "converter3D",
@@ -23,45 +23,31 @@ const converter3DService = createService(
     const blobStorageService = await getBlobStorageService(services);
     const configurationService = await getConfigurationService(services);
 
-    const projectModelUploadContainerName = "converter-project-model-upload";
-
     const projectModel = {
-      async uploadProjectModel(
-        file: Readable,
+      async convertProjectModel(
+        blobRef: string,
         fileName: string,
         srcSRS: string
       ) {
-        const { blobName } = await blobStorageService.uploadStream(
-          file,
-          projectModelUploadContainerName
-        );
+        const blobUrl = new URL(blobRef);
+
+        const [, containerName, blobName] = blobUrl.pathname.split("/");
 
         const job = await projectModelConverterQueue.add(blobName, {
           blobName,
           fileName,
           srcSRS,
-          containerName: projectModelUploadContainerName,
+          containerName,
           secret: crypto.randomUUID(),
         });
 
         await blobStorageService.deleteLater(
-          projectModelUploadContainerName,
+          containerName,
           blobName,
           24 * 60 * 60 * 1000
         );
 
         return { jobId: job.id!, secret: job.data.secret };
-      },
-
-      async deleteProjectModelRemnants(blobName: string) {
-        try {
-          await blobStorageService.delete(
-            projectModelUploadContainerName,
-            blobName
-          );
-        } catch (e) {
-          console.error(e);
-        }
       },
 
       async getProjectModelStatus(jobId: string, secret: string) {
@@ -87,7 +73,11 @@ const converter3DService = createService(
         return { state, progress: Number(job.progress) };
       },
 
-      async downloadProjectModel(jobId: string, secret: string) {
+      async downloadProjectModel(
+        jobId: string,
+        projectId: string,
+        secret: string
+      ) {
         const job = await projectModelConverterQueue.getJob(jobId);
 
         if (!job || job.data.secret !== secret)
@@ -95,10 +85,17 @@ const converter3DService = createService(
 
         const { collectableBlobName } = job.returnvalue;
 
-        return await blobStorageService.downloadToBuffer(
-          projectModelUploadContainerName,
+        const stream = await blobStorageService.downloadToStream(
+          job.data.containerName,
           collectableBlobName
         );
+
+        const { href } = await blobStorageService.uploadStream(
+          stream.readableStreamBody as Readable,
+          `project-${projectId}`
+        );
+
+        return { href };
       },
     };
 

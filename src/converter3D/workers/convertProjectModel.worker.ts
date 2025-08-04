@@ -22,6 +22,7 @@ const convertProjectModelWorker = createWorker()
       {
         modelMatrix: number[];
         collectableBlobName: string;
+        containerName: string;
         secret: string;
       }
     >
@@ -30,8 +31,6 @@ const convertProjectModelWorker = createWorker()
     if (!job) return;
 
     const converter3DService = await getConverter3DService(services);
-
-    await converter3DService.deleteProjectModelRemnants(job.data.blobName);
   })
   .on("completed", async ({ services }, job) => {
     const blobStorageService = await getBlobStorageService(services);
@@ -49,10 +48,7 @@ const convertProjectModelWorker = createWorker()
   })
   .connection(defaultConnection)
   .processor(
-    new URL(
-      "./convertProjectModel.sandboxedWorker.js",
-      import.meta.url
-    )
+    new URL("./convertProjectModel.sandboxedWorker.js", import.meta.url)
   );
 
 /*

@@ -41,7 +41,7 @@ Logger.DEFAULT_INSTANCE = new Logger(Logger.Verbosity.SILENT);
 export default async function run(
   job: ConvertProjectModelWorkerJob
 ): Promise<ConvertProjectModelWorkerJob["returnValue"]> {
-  console.log("CONVERTING PROJECT MODEL")
+  console.log("CONVERTING PROJECT MODEL");
   try {
     const { services } = await initializeContainers();
 
@@ -153,6 +153,7 @@ export default async function run(
 
       return {
         collectableBlobName: job.data.blobName,
+        containerName: job.data.containerName,
         modelMatrix: modelMatrix.toArray(),
         secret: job.data.secret,
       };

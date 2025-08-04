@@ -4,11 +4,6 @@ import {
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
 import dayjs from "dayjs";
-import {
-  from,
-  mergeMap,
-  startWith
-} from "rxjs";
 import { getAuthService } from "../auth/auth.service.js";
 import { getDbService } from "../db/db.service.js";
 
@@ -152,17 +147,11 @@ const eventsService = createService("events", async ({ services }) => {
     fetchStatus,
 
     list() {
-      return dbService.rawClient.event.subscribe({ operations: ["*"] }).pipe(
-        startWith(null),
-        mergeMap(() => from(fetchAll()))
-      );
+      return dbService.rawClient.event.subscribe({ operations: ["*"] });
     },
 
     status(id: string) {
-      return dbService.rawClient.event.subscribe({ operations: ["*"] }).pipe(
-        startWith(null),
-        mergeMap(() => from(fetchStatus(id)))
-      );
+      return dbService.rawClient.event.subscribe({ operations: ["*"] });
     },
 
     async setHeartbeat(id: string) {

@@ -15,6 +15,7 @@ import { configurationService } from "./configuration/configuration.service.js";
 import { converter3DService } from "./converter3D/converter3D.service.js";
 import { dbService } from "./db/db.service.js";
 import { eventsService } from "./events/events.service.js";
+import { projectService } from "./project/project.service.js";
 import { statsService } from "./stats/stats.service.js";
 import { deleteBlobWorker } from "./blobStorage/workers/deleteBlob.worker.js";
 import { convert3DTilesWorker } from "./converter3D/workers/convert3DTiles.worker.js";
@@ -39,6 +40,7 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   serviceRegistry.register(converter3DService);
   serviceRegistry.register(dbService);
   serviceRegistry.register(eventsService);
+  serviceRegistry.register(projectService);
   serviceRegistry.register(statsService);
 
   const workerRegistry = new WorkerRegistry(serviceRegistry);

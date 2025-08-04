@@ -24,21 +24,21 @@ export const convert3DTileResponseDTO = Type.Object({
 });
 export type Convert3DTileResponseDTO = Static<typeof convertTerrainRequestDTO>;
 
-export const uploadProjectModelRequestDTO = Type.Object({
+export const convertProjectModelRequestDTO = Type.Object({
   epsgCode: Type.String(),
   fileName: Type.String(),
-  file: Type.String({ format: "binary" }),
+  blobRef: Type.String(),
 });
-export type UploadProjectModelRequestDTO = Static<
-  typeof uploadProjectModelRequestDTO
+export type ConvertProjectModelRequestDTO = Static<
+  typeof convertProjectModelRequestDTO
 >;
 
-export const uploadProjectModelResponseDTO = Type.Object({
+export const convertProjectModelResponseDTO = Type.Object({
   jobId: Type.String(),
   secret: Type.String(),
 });
-export type UploadProjectModelResponseDTO = Static<
-  typeof uploadProjectModelResponseDTO
+export type ConvertProjectModelResponseDTO = Static<
+  typeof convertProjectModelResponseDTO
 >;
 
 export const getProjectModelStatusRequestDTO = Type.Object({
@@ -68,6 +68,7 @@ export type GetProjectModelStatusResponseDTO = Static<
 
 export const downloadProjectModelRequestDTIO = Type.Object({
   jobId: Type.String(),
+  projectId: Type.String(),
   secret: Type.String(),
 });
 export type DownloadProjectModelRequestDTIO = Static<

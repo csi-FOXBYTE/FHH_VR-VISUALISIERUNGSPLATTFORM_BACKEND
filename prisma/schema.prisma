@@ -87,37 +87,39 @@ model Authenticator {
 }
 
 model Project {
-  owner                 User?             @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner                 User?           @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ownerId               String?
-  id                    String            @id() @default(cuid())
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt()
-  title                 String            @db.Text()
-  description           String            @db.Text()
+  id                    String          @id() @default(cuid())
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt()
+  title                 String          @db.Text()
+  description           String          @db.Text()
   visibleForGroups      Group[]
-  visibleForUsers       User[]            @relation("visibleForUsers")
+  visibleForUsers       User[]          @relation("visibleForUsers")
   startingPoints        StartingPoint[]
-  clippingPolygons      ClippingPolygon[]
   includedBaseLayers    BaseLayer[]
-  includedProjectLayers ProjectLayer[]    @relation("includedInProjects")
+  includedProjectLayers ProjectLayer[]  @relation("includedInProjects")
   projectLayers         ProjectLayer[]
+  variants              Variant[]
+  img                   String?         @db.Text()
   events                Event[]
 }
 
 model ClippingPolygon {
-  owner     User?    @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ownerId   String?
-  id        String   @id() @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt()
-  name      String
-  /// Comma separated point list [x0, y0, z0, ..., xn, yn, zn]
-  points    String   @db.Text()
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  projectId String
+  owner          User?        @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ownerId        String?
+  id             String       @id() @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt()
+  name           String
+  /// Comma separated point list x0,y0,z0,...,xn,yn,zn
+  points         String       @db.Text()
+  projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id])
+  projectLayerId String
+  affectsTerrain Boolean      @default(false)
 }
 
-model ProjectFile {
+model ProjectModel {
   id             String       @id() @default(cuid())
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt()
@@ -127,6 +129,16 @@ model ProjectFile {
   attributes     String       @db.Text()
   projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   projectLayerId String
+  rotationX      Float
+  rotationY      Float
+  rotationZ      Float
+  rotationW      Float
+  scaleX         Float
+  scaleY         Float
+  scaleZ         Float
+  translationX   Float
+  translationY   Float
+  translationZ   Float
 }
 
 /// Is global per definition, can not be associatd to a project.
@@ -163,6 +175,18 @@ model StartingPoint {
   endPointZ   Float
   project     Project? @relation(fields: [projectId], references: [id])
   projectId   String?
+  img         String   @db.Text()
+}
+
+model Variant {
+  id            String         @id() @default(cuid())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt()
+  project       Project        @relation(fields: [projectId], references: [id])
+  projectId     String
+  name          String
+  description   String
+  projectLayers ProjectLayer[]
 }
 
 model Group {
@@ -205,32 +229,34 @@ model BaseLayer {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt()
   name               String
-  description        String    @default("")
-  sizeGB             Float
-  href               String?
   /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
   type               String
   visibleForGroups   Group[]
   /// Can be one of PENDING | FAILED | COMPLETED
   status             String    @default("COMPLETED")
   progress           Float     @default(0)
+  sizeGB             Float
+  description        String    @default("")
+  /// A layer can either be stored in azure or externally.
+  href               String?
+  /// Containername is only used when its stored in azure.
+  containerName      String?
   includedInProjects Project[]
 }
 
 model ProjectLayer {
-  owner              User?         @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner              User?             @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ownerId            String?
-  id                 String        @id() @default(cuid())
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt()
+  id                 String            @id() @default(cuid())
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt()
   name               String
-  description        String        @default("")
-  sizeGB             Float
-  href               String?
-  projectFiles       ProjectFile[]
-  includedInProjects Project[]     @relation("includedInProjects")
-  belongsToProject   Project       @relation(fields: [belongsToProjectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  belongsToProjectId String
+  projectModels      ProjectModel[]
+  clippingPolygons   ClippingPolygon[]
+  includedInProjects Project[]         @relation("includedInProjects")
+  associatedVariants Variant[]
+  project            Project           @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  projectId          String
 }
 
 model Event {

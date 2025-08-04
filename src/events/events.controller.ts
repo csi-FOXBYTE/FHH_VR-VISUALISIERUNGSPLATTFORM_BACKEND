@@ -1,7 +1,7 @@
 import { createController } from "@csi-foxbyte/fastify-toab";
 import { Type } from "@sinclair/typebox";
+import { on } from "events";
 import { authMiddleware } from "../auth/auth.middleware.js";
-import { eachValueFromAbortable } from "../lib/eachValueFromAbortable.js";
 import {
   eventsCreateRequestDTO,
   eventsHostRequestDTO,
@@ -20,7 +20,7 @@ eventsController
 
     const events = eventsService.list();
 
-    for await (const value of eachValueFromAbortable(events, signal)) {
+    for await (const value of on(events, "change", { signal })) {
       yield value;
     }
   });
@@ -51,7 +51,7 @@ eventsController
 
     const events = eventsService.status(params.id);
 
-    for await (const value of eachValueFromAbortable(events, signal)) {
+    for await (const value of on(events, "change", { signal })) {
       yield value;
     }
   });

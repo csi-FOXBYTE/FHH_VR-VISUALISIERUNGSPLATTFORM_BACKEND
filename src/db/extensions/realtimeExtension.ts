@@ -1,5 +1,5 @@
 import { Prisma, PrismaClient } from "@prisma/client";
-import { Subject, filter } from "rxjs";
+import { EventEmitter } from "events";
 
 /** Returns the current change tracking version. */
 async function getCurrentVersion(prismaClient: {
@@ -21,17 +21,17 @@ async function setupDB(
 ) {
   try {
     await prismaClient.$executeRawUnsafe(`
-    ALTER DATABASE [${databaseName}]
-    SET CHANGE_TRACKING = ON
-    (CHANGE_RETENTION = 5 MINUTES, AUTO_CLEANUP = ON);
+ALTER DATABASE [${databaseName}]
+SET CHANGE_TRACKING = ON
+(CHANGE_RETENTION = 5 MINUTES, AUTO_CLEANUP = ON);
     `);
   } catch {}
   // Enable change tracking for each model/table.
   for (const value of modelDbNameMap.values()) {
     try {
       await prismaClient.$executeRawUnsafe(`
-      ALTER TABLE dbo.[${value}]
-      ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON);
+ALTER TABLE dbo.[${value}]
+ENABLE CHANGE_TRACKING WITH (TRACK_COLUMNS_UPDATED = ON);
       `);
     } catch {}
   }
@@ -48,15 +48,19 @@ async function getChanges(
   databaseName: string,
   modelDbNameMap: Map<string, string>
 ) {
-  const queries = Array.from(tables).map(async (table) => {
+  const queries: {
+    operation: string;
+    result: { SYS_CHANGE_OPERATION: string; id: string }[];
+  }[] = [];
+  for (const table of Array.from(tables)) {
     try {
       const recordset: { SYS_CHANGE_OPERATION: string; id: string }[] =
         await prismaClient.$queryRawUnsafe(`
-      DECLARE @lastVersion BIGINT = ${lastVersion};
-      SELECT CT.*
-      FROM CHANGETABLE(CHANGES dbo.[${table}], @lastVersion) AS CT;
+DECLARE @lastVersion BIGINT = ${lastVersion};
+SELECT CT.*
+FROM CHANGETABLE(CHANGES dbo.[${table}], @lastVersion) AS CT;
     `);
-      return { operation: table, result: recordset };
+      queries.push({ operation: table, result: recordset });
     } catch (e) {
       try {
         await setupDB(prismaClient, databaseName, modelDbNameMap);
@@ -66,9 +70,13 @@ async function getChanges(
       console.error(JSON.stringify(e));
       throw e;
     }
-  });
-  return Promise.all(queries);
+  }
+  return queries;
 }
+
+type ChangeEmitters = EventEmitter<{
+  change: [{ id: string; operation: OPERATIONS }];
+}>;
 
 type OPERATIONS = "UPDATE" | "DELETE" | "INSERT";
 
@@ -85,11 +93,6 @@ export default function realtimeExtension({
       setupDB: false,
       lastSyncVersion: BigInt(0),
     };
-
-    const subjects = new Map<
-      Prisma.ModelName,
-      Subject<{ id: string; operation: OPERATIONS }>
-    >();
 
     // Filter models that have an ID field and create maps between model names and their DB names.
     const models = Prisma.dmmf.datamodel.models.filter((m) =>
@@ -111,8 +114,21 @@ export default function realtimeExtension({
       poolRef.setupDB = true;
     });
 
+    const changeEmitters = new Map<string, ChangeEmitters>();
+
+    for (const model of models) {
+      changeEmitters.set(model.name, new EventEmitter());
+    }
+
     /** Polls the database for changes and notifies subscribers. */
     async function pollChanges() {
+      if (
+        Array.from(changeEmitters.values()).every(
+          (ce) => ce.listenerCount("change") === 0
+        )
+      )
+        return;
+
       try {
         if (poolRef.lastSyncVersion === BigInt(0)) {
           poolRef.lastSyncVersion = await getCurrentVersion(prismaClient);
@@ -135,9 +151,9 @@ export default function realtimeExtension({
               const operationStr = opMap[SYS_CHANGE_OPERATION];
               if (!operationStr) continue;
               const modelName = modelNameMap.get(operation)!;
-              subjects
-                .get(modelName as Prisma.ModelName)
-                ?.next({ id, operation: operationStr });
+              changeEmitters
+                .get(modelName)
+                ?.emit("change", { id, operation: operation as OPERATIONS });
             }
           }
           poolRef.lastSyncVersion = await getCurrentVersion(prismaClient);
@@ -147,18 +163,8 @@ export default function realtimeExtension({
       }
     }
 
-    function pruneEmptySubjects() {
-      for (const [modelName, subject] of subjects) {
-        if (!subject.observed) {
-          subject.complete();
-          subjects.delete(modelName);
-        }
-      }
-    }
-
     async function startPolling() {
       await pollChanges();
-      pruneEmptySubjects();
       setTimeout(startPolling, intervalMs);
     }
 
@@ -178,23 +184,13 @@ export default function realtimeExtension({
               $name: Prisma.ModelName;
             };
             const modelName = context.$name;
-            if (!subjects.has(modelName)) {
-              subjects.set(
-                modelName,
-                new Subject<{ id: string; operation: OPERATIONS }>()
-              );
-            }
-            let obs = subjects.get(modelName)!.asObservable();
 
-            if (args.id !== undefined)
-              obs = obs.pipe(filter((event) => args.id === event.id));
+            const changeEmitter = changeEmitters.get(modelName);
 
-            if (!args.operations.includes("*"))
-              obs = obs.pipe(
-                filter((event) => args.operations.includes(event.operation))
-              );
+            if (!changeEmitter)
+              throw new Error(`No emitter for ${modelName} found!`);
 
-            return obs;
+            return changeEmitter;
           },
         },
       },

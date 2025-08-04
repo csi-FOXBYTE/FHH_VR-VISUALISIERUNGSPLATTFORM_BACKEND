@@ -10,12 +10,26 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
+import dayjs from "dayjs";
 import { Readable } from "stream";
 import { getDeleteBlobWorkerQueue } from "./workers/deleteBlob.worker.js";
-import dayjs from "dayjs";
 
 const blobStorageService = createService("blobStorage", async ({ queues }) => {
   const deleteBlobQueue = getDeleteBlobWorkerQueue(queues);
+
+  async function deleteLater(
+    containerName: string,
+    blobName: string,
+    delayMs: number
+  ) {
+    await deleteBlobQueue.add(
+      `${containerName}/${blobName}`,
+      { blobName, containerName },
+      {
+        delay: delayMs,
+      }
+    );
+  }
 
   const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
@@ -61,7 +75,7 @@ const blobStorageService = createService("blobStorage", async ({ queues }) => {
 
       const response = await client.uploadData(data);
 
-      return { blobName, ...response };
+      return { blobName, href: client.url.toString(), ...response };
     },
 
     async getUploadSASUrl(containerName: string) {
@@ -80,12 +94,44 @@ const blobStorageService = createService("blobStorage", async ({ queues }) => {
           containerName,
           blobName,
           permissions,
-          expiresOn: dayjs().add(2, "hours").toDate(),
+          expiresOn: dayjs().add(1, "day").toDate(),
         },
         blobServiceClient.credential as StorageSharedKeyCredential
       );
 
+      await deleteLater(containerName, blobName, 24 * 60 * 60 * 1000); // Delete after 1 day
+
       return `${client.url}?${sasToken.toString()}`;
+    },
+
+    getContainerSASToken(
+      containerName: string,
+      permissions: BlobSASPermissions
+    ) {
+      return generateBlobSASQueryParameters(
+        { containerName, permissions, expiresOn: dayjs().add(1, "day").toDate() },
+        blobServiceClient.credential as StorageSharedKeyCredential,
+        
+      );
+    },
+
+    getContainerReadSASUrl(containerName: string) {
+      const containerClient =
+        blobServiceClient.getContainerClient(containerName);
+
+      const permissions = new BlobSASPermissions();
+      permissions.read = true;
+
+      const sasToken = generateBlobSASQueryParameters(
+        {
+          containerName,
+          permissions,
+          expiresOn: dayjs().add(1, "day").toDate(),
+        },
+        blobServiceClient.credential as StorageSharedKeyCredential
+      );
+
+      return `${containerClient.url}?${sasToken.toString()}`;
     },
 
     async uploadStream(
@@ -102,7 +148,7 @@ const blobStorageService = createService("blobStorage", async ({ queues }) => {
         onProgress,
       });
 
-      return { blobName, ...response };
+      return { blobName, href: client.url.toString(), ...response };
     },
 
     async downloadToBuffer(containerName: string, blobName: string) {
@@ -134,19 +180,7 @@ const blobStorageService = createService("blobStorage", async ({ queues }) => {
       return await client.delete();
     },
 
-    async deleteLater(
-      containerName: string,
-      blobName: string,
-      delayMs: number
-    ) {
-      await deleteBlobQueue.add(
-        `${containerName}/${blobName}`,
-        { blobName, containerName },
-        {
-          delay: delayMs,
-        }
-      );
-    },
+    deleteLater,
   };
 });
 
