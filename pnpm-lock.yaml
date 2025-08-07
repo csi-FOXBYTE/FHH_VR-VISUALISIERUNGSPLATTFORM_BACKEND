@@ -24,8 +24,8 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2(encoding@0.1.13)(jiti@2.4.2)(yaml@2.8.0)
       '@csi-foxbyte/fastify-toab':
-        specifier: ^0.0.5
-        version: 0.0.5(bullmq@5.56.4)
+        specifier: ^0.0.8
+        version: 0.0.8(bullmq@5.56.4)
       '@csi-foxbyte/mesh-dem-to-terrain':
         specifier: ^0.0.1
         version: 0.0.1
@@ -347,8 +347,8 @@ packages:
   '@csi-foxbyte/cityjson-to-3d-tiles@0.0.2':
     resolution: {integrity: sha512-YXQF7C49kXrzs/dSSVZnPKUOydapx9cAIXPX4LMo4bGFJcjVCC4LAgb9IOkYS671YmtgU2yJTFrF7ol0FwrYaA==}
 
-  '@csi-foxbyte/fastify-toab@0.0.5':
-    resolution: {integrity: sha512-IJ/Dx8HT20eHNzZn6e391Lx/U0v5zeL7HuTzAuLxJi+iW65CPGiKsseAgt6cZDDiYxawNjHPpFkmDeB0f8kmRQ==}
+  '@csi-foxbyte/fastify-toab@0.0.8':
+    resolution: {integrity: sha512-lxxkMfqOcTDU9PgRVc6SZGe0NLtWouAv+lYc7TvaWtffEO3FWFmBhI4g9ctVF8UiliXRqjCIKElKwEHkQQSy1g==}
     hasBin: true
     peerDependencies:
       bullmq: ^5.0.0
@@ -3967,6 +3967,7 @@ packages:
   source-map@0.8.0-beta.0:
     resolution: {integrity: sha512-2ymg6oRBpebeZi9UUNsgQ89bhx01TcTkmNTGnNO88imTmbSgy4nfujrgVEFKWpMTEGA11EDkTt7mqObTPdigIA==}
     engines: {node: '>= 8'}
+    deprecated: The work that was done in this beta branch won't be included in future versions
 
   spdx-correct@3.2.0:
     resolution: {integrity: sha512-kN9dJbvnySHULIluDHy32WHRUu3Og7B9sbY7tsFLctQkIqnMh3hErYgdMjTYuqmcXX+lK5T1lnUt3G7zNswmZA==}
@@ -4844,7 +4845,7 @@ snapshots:
       - supports-color
       - yaml
 
-  '@csi-foxbyte/fastify-toab@0.0.5(bullmq@5.56.4)':
+  '@csi-foxbyte/fastify-toab@0.0.8(bullmq@5.56.4)':
     dependencies:
       bullmq: 5.56.4
       commander: 14.0.0

@@ -3,19 +3,21 @@ import { Type, Static } from "@sinclair/typebox";
 export const convertTerrainRequestDTO = Type.Object({
   srcSRS: Type.String(),
   name: Type.String(),
-  blobRef: Type.String(),
+  token: Type.String(),
 });
 export type ConvertTerrainRequestDTO = Static<typeof convertTerrainRequestDTO>;
 
 export const convertTerrainResponseDTO = Type.Object({
   jobId: Type.String(),
 });
-export type ConvertTerrainResponseDTO = Static<typeof convertTerrainResponseDTO>;
+export type ConvertTerrainResponseDTO = Static<
+  typeof convertTerrainResponseDTO
+>;
 
 export const convert3DTileRequestDTO = Type.Object({
   srcSRS: Type.String(),
   name: Type.String(),
-  blobRef: Type.String(),
+  token: Type.String(),
 });
 export type Convert3DTileRequestDTO = Static<typeof convertTerrainRequestDTO>;
 
@@ -27,7 +29,7 @@ export type Convert3DTileResponseDTO = Static<typeof convertTerrainRequestDTO>;
 export const convertProjectModelRequestDTO = Type.Object({
   epsgCode: Type.String(),
   fileName: Type.String(),
-  blobRef: Type.String(),
+  token: Type.String(),
 });
 export type ConvertProjectModelRequestDTO = Static<
   typeof convertProjectModelRequestDTO

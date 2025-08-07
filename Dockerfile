@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openjdk-17-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
 
+ENV HOME=/home/nodeuser
+
 # Set up Java environment
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:$PATH"
@@ -32,6 +34,8 @@ RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodeuser
 RUN chown nodeuser:nodejs /app
 RUN chown nodeuser:nodejs /
+
+RUN mkdir -p $HOME && chown -R nodeuser:nodejs $HOME
 
 # Copy all source files and configuration
 COPY --chown=nodeuser:nodejs . .

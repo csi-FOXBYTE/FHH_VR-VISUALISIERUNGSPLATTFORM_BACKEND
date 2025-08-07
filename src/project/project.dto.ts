@@ -8,6 +8,8 @@ export const projectDTO = Type.Object({
   sasQueryParameters: Type.String(),
   img: Type.Union([Type.String(), Type.Null()]),
   title: Type.String(),
+  isReadOnly: Type.Boolean(),
+  camera: Type.Union([Type.String(), Type.Null()]),
   visualAxes: Type.Array(
     Type.Object({
       id: Type.String(),
@@ -40,7 +42,7 @@ export const projectDTO = Type.Object({
         z: Type.Number(),
       }),
       endPoint: Type.Object({
-        x: Type.Number(),
+        x: Type.Number({}),
         y: Type.Number(),
         z: Type.Number(),
       }),
@@ -50,6 +52,8 @@ export const projectDTO = Type.Object({
     Type.Object({
       name: Type.String(),
       id: Type.String(),
+      includedBaseLayers: Type.Array(Type.String()),
+      includedExtensionLayers: Type.Array(Type.String()),
       clippingPolygons: Type.Array(
         Type.Object({
           name: Type.String(),
@@ -90,6 +94,14 @@ export const projectDTO = Type.Object({
       ),
     })
   ),
+  extensionLayers: Type.Array(
+    Type.Object({
+      id: Type.String(),
+      name: Type.String(),
+      href: Type.String(),
+      type: Type.String(),
+    })
+  ),
   allAvailableBaseLayers: Type.Array(
     Type.Object({
       id: Type.String(),
@@ -100,5 +112,4 @@ export const projectDTO = Type.Object({
       type: Type.String(),
     })
   ),
-  includedBaseLayers: Type.Array(Type.String()),
 });

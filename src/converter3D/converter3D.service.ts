@@ -3,14 +3,14 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
+import { Readable } from "node:stream";
 import { getAuthService } from "../auth/auth.service.js";
 import { getBlobStorageService } from "../blobStorage/blobStorage.service.js";
 import { getConfigurationService } from "../configuration/configuration.service.js";
-import { getDbService } from "../db/db.service.js";
+import { getPrismaService } from "../prisma/prisma.service.js";
 import { getConvert3DTilesWorkerQueue } from "./workers/convert3DTiles.worker.js";
 import { getConvertProjectModelWorkerQueue } from "./workers/convertProjectModel.worker.js";
 import { getConvertTerrainWorkerQueue } from "./workers/convertTerrain.worker.js";
-import { Readable } from "node:stream";
 
 const converter3DService = createService(
   "converter3D",
@@ -19,19 +19,18 @@ const converter3DService = createService(
     const projectModelConverterQueue =
       getConvertProjectModelWorkerQueue(queues);
     const terrainConverterQueue = getConvertTerrainWorkerQueue(queues);
-    const dbService = await getDbService(services);
+    const prismaService = await getPrismaService(services);
     const blobStorageService = await getBlobStorageService(services);
     const configurationService = await getConfigurationService(services);
 
     const projectModel = {
       async convertProjectModel(
-        blobRef: string,
+        token: string,
         fileName: string,
         srcSRS: string
       ) {
-        const blobUrl = new URL(blobRef);
-
-        const [, containerName, blobName] = blobUrl.pathname.split("/");
+        const { blobName, containerName } =
+          await blobStorageService.verifyUploadToken(token);
 
         const job = await projectModelConverterQueue.add(blobName, {
           blobName,
@@ -100,20 +99,20 @@ const converter3DService = createService(
     };
 
     const terrain = {
-      async convertTerrain(blobRef: string, name: string, srcSRS: string) {
+      async convertTerrain(token: string, name: string, srcSRS: string) {
         const authService = await getAuthService(services);
 
-        const blobUrl = new URL(blobRef);
+        const { blobName, containerName } =
+          await blobStorageService.verifyUploadToken(token);
 
-        const [, containerName, blobName] = blobUrl.pathname.split("/");
-
-        const { id } = await dbService.rawClient.baseLayer.create({
+        const { id } = await prismaService.baseLayer.create({
           data: {
             name: name,
             sizeGB: 0,
             type: "TERRAIN",
             status: "PENDING",
             progress: 0,
+            containerName: containerName,
             ownerId: (await authService.getSession())!.user.id,
           },
           select: {
@@ -149,20 +148,20 @@ const converter3DService = createService(
     };
 
     const tile3D = {
-      async convert3DTile(blobRef: string, name: string, srcSRS: string) {
+      async convert3DTile(token: string, name: string, srcSRS: string) {
         const authService = await getAuthService(services);
 
-        const blobUrl = new URL(blobRef);
+        const { blobName, containerName } =
+          await blobStorageService.verifyUploadToken(token);
 
-        const [, containerName, blobName] = blobUrl.pathname.split("/");
-
-        const { id } = await dbService.rawClient.baseLayer.create({
+        const { id } = await prismaService.baseLayer.create({
           data: {
             name: name,
             sizeGB: 0,
             type: "3D-TILES",
             status: "PENDING",
             progress: 0,
+            containerName: containerName,
             ownerId: (await authService.getSession())!.user.id,
           },
           select: {
@@ -206,7 +205,7 @@ const converter3DService = createService(
         progress: number,
         status: "PENDING" | "ACTIVE" | "FAILED" | "COMPLETED"
       ) {
-        return await dbService.rawClient.baseLayer.update({
+        return await prismaService.baseLayer.update({
           where: {
             id,
           },

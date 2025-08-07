@@ -6,18 +6,18 @@ import {
 import dayjs from "dayjs";
 import { getAuthService } from "../auth/auth.service.js";
 import { getDbService } from "../db/db.service.js";
+import { getPrismaService } from "../prisma/prisma.service.js";
 
 const eventsService = createService("events", async ({ services }) => {
   const HEARTBEAT_DELAY_MS = 15_000;
   const HEARTBEAT_CHECK_MS = 20_000;
 
   const dbService = await getDbService(services);
+  const prismaService = await getPrismaService(services);
   const authService = await getAuthService(services);
 
   async function fetchAll() {
-    const enhancedClient = await dbService.getEnhancedClient();
-
-    return await enhancedClient.event.findMany({
+    return await dbService.event.findMany({
       select: {
         title: true,
         status: true,
@@ -27,9 +27,7 @@ const eventsService = createService("events", async ({ services }) => {
   }
 
   async function fetchStatus(id: string) {
-    const enhancedClient = await dbService.getEnhancedClient();
-
-    return await enhancedClient.event.findFirstOrThrow({
+    return await dbService.event.findFirstOrThrow({
       where: {
         id,
       },
@@ -41,10 +39,8 @@ const eventsService = createService("events", async ({ services }) => {
   }
 
   async function checkHeartbeat(id: string) {
-    const enhancedClient = await dbService.getEnhancedClient();
-
     const { heartbeatTimestamp, status } =
-      await enhancedClient.event.findFirstOrThrow({
+      await dbService.event.findFirstOrThrow({
         where: { id },
         select: { heartbeatTimestamp: true, status: true },
       });
@@ -58,7 +54,7 @@ const eventsService = createService("events", async ({ services }) => {
     )
       return;
 
-    await enhancedClient.event.update({
+    await dbService.event.update({
       where: {
         id,
       },
@@ -82,9 +78,7 @@ const eventsService = createService("events", async ({ services }) => {
       title: string;
       attendees: string[];
     }) {
-      const enhancedClient = await dbService.getEnhancedClient();
-
-      await enhancedClient.event.create({
+      await dbService.event.create({
         data: {
           endTime,
           startTime,
@@ -119,9 +113,7 @@ const eventsService = createService("events", async ({ services }) => {
       title?: string;
       attendees?: string[];
     }) {
-      const enhancedClient = await dbService.getEnhancedClient();
-
-      return await enhancedClient.event.update({
+      return await dbService.event.update({
         data: {
           endTime,
           startTime,
@@ -147,17 +139,15 @@ const eventsService = createService("events", async ({ services }) => {
     fetchStatus,
 
     list() {
-      return dbService.rawClient.event.subscribe({ operations: ["*"] });
+      return prismaService.event.subscribe({ operations: ["*"] });
     },
 
     status(id: string) {
-      return dbService.rawClient.event.subscribe({ operations: ["*"] });
+      return prismaService.event.subscribe({ operations: ["*"] });
     },
 
     async setHeartbeat(id: string) {
-      const enhancedClient = await dbService.getEnhancedClient();
-
-      await enhancedClient.event.update({
+      await dbService.event.update({
         where: {
           id,
         },
@@ -172,9 +162,7 @@ const eventsService = createService("events", async ({ services }) => {
     checkHeartbeat,
 
     async hostSession(id: string, joinCode: string) {
-      const enhancedClient = await dbService.getEnhancedClient();
-
-      await enhancedClient.event.update({
+      await dbService.event.update({
         where: {
           id,
         },
@@ -189,9 +177,7 @@ const eventsService = createService("events", async ({ services }) => {
     },
 
     async endSession(id: string) {
-      const enhancedClient = await dbService.getEnhancedClient();
-
-      await enhancedClient.event.update({
+      await dbService.event.update({
         where: {
           id,
         },
@@ -204,9 +190,7 @@ const eventsService = createService("events", async ({ services }) => {
     },
 
     async rehostSession(id: string, joinCode: string) {
-      const enhancedClient = await dbService.getEnhancedClient();
-
-      await enhancedClient.event.update({
+      await dbService.event.update({
         where: {
           id,
         },

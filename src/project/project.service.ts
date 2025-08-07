@@ -8,6 +8,7 @@ import { getBlobStorageService } from "../blobStorage/blobStorage.service.js";
 import { BlobSASPermissions } from "@azure/storage-blob";
 import { ProjectDTO } from "./project.dto.js";
 import sharp from "sharp";
+import { getAuthService } from "../auth/auth.service.js";
 
 const projectService = createService(
   "project",
@@ -16,12 +17,12 @@ const projectService = createService(
 
     const blobStorageService = await getBlobStorageService(services);
 
+    const authService = await getAuthService(services);
+
     return {
       async saveProject(project: ProjectDTO) {
-        const enhancedClient = await dbService.getEnhancedClient();
-
         // remove all project models
-        await enhancedClient.projectModel.deleteMany({
+        await dbService.projectModel.deleteMany({
           where: {
             projectLayer: {
               projectId: project.id,
@@ -30,7 +31,7 @@ const projectService = createService(
         });
 
         // remove all clipping polygons
-        await enhancedClient.clippingPolygon.deleteMany({
+        await dbService.clippingPolygon.deleteMany({
           where: {
             projectLayer: {
               projectId: project.id,
@@ -40,7 +41,7 @@ const projectService = createService(
 
         // remove all project layers
 
-        await enhancedClient.projectLayer.deleteMany({
+        await dbService.projectLayer.deleteMany({
           where: {
             projectId: project.id,
           },
@@ -48,7 +49,7 @@ const projectService = createService(
 
         // remove all starting points
 
-        await enhancedClient.startingPoint.deleteMany({
+        await dbService.startingPoint.deleteMany({
           where: {
             projectId: project.id,
           },
@@ -57,17 +58,23 @@ const projectService = createService(
         // create project layers
 
         for (const layer of project.layers) {
-          const { id } = await enhancedClient.projectLayer.create({
+          const { id } = await dbService.projectLayer.create({
             data: {
               name: layer.name,
               projectId: project.id,
+              baseLayers: {
+                connect: layer.includedBaseLayers.map((id) => ({ id })),
+              },
+              extensionLayers: {
+                connect: layer.includedExtensionLayers.map((id) => ({ id })),
+              },
             },
             select: {
               id: true,
             },
           });
 
-          await enhancedClient.clippingPolygon.createMany({
+          await dbService.clippingPolygon.createMany({
             data: layer.clippingPolygons.map((c) => ({
               name: c.name,
               points: c.points.flatMap((c) => [c.x, c.y, c.z]).join(","),
@@ -76,7 +83,7 @@ const projectService = createService(
             })),
           });
 
-          await enhancedClient.projectModel.createMany({
+          await dbService.projectModel.createMany({
             data: layer.projectModels.map((c) => ({
               name: c.name,
               attributes: JSON.stringify(c.attributes),
@@ -96,7 +103,7 @@ const projectService = createService(
           });
         }
 
-        await enhancedClient.startingPoint.createMany({
+        await dbService.startingPoint.createMany({
           data: project.startingPoints.map((s) => ({
             name: s.name,
             endPointX: s.endPoint.x,
@@ -136,36 +143,47 @@ const projectService = createService(
           img = `data:image/jpeg;base64,${buffer.toString("base64")}`;
         }
 
-        console.log(project.title)
-
-        await enhancedClient.project.update({
+        await dbService.project.update({
           where: {
             id: project.id,
           },
           data: {
             title: project.title,
             img: img,
+            camera: project.camera,
             description: project.description,
           },
         });
       },
       async getProject(id: string) {
-        const enhancedClient = await dbService.getEnhancedClient();
-
         const permissions = new BlobSASPermissions();
         permissions.read = true;
+
+        const session = await authService.getSession();
 
         const sasQueryParameters = blobStorageService.getContainerSASToken(
           `project-${id}`,
           permissions
         );
 
-        const allAvailableBaseLayers = await enhancedClient.baseLayer.findMany({
-          where: {
-            href: {
-              not: null,
-            },
-          },
+        function createBaseLayerHref(baseLayer: {
+          type: string;
+          containerName: string;
+        }) {
+          const url = blobStorageService.getContainerReadSASUrl(
+            baseLayer.containerName
+          );
+
+          if (baseLayer.type === "3D-TILES") {
+            const newUrl = new URL(url);
+
+            return `${newUrl.protocol}//${newUrl.host}${newUrl.pathname}/tileset.json${newUrl.search}`;
+          } else {
+            return url;
+          }
+        }
+
+        const allAvailableBaseLayers = await dbService.baseLayer.findMany({
           select: {
             id: true,
             name: true,
@@ -177,24 +195,39 @@ const projectService = createService(
           },
         });
 
-        const project = await enhancedClient.project.findFirstOrThrow({
+        const project = await dbService.project.findFirstOrThrow({
           where: {
             id,
           },
           select: {
             id: true,
+            camera: true,
+            ownerId: true,
             title: true,
             img: true,
             description: true,
-            includedBaseLayers: {
+            extensionLayers: {
               select: {
+                href: true,
                 id: true,
+                name: true,
+                type: true,
               },
             },
             projectLayers: {
               select: {
                 name: true,
                 id: true,
+                baseLayers: {
+                  select: {
+                    id: true,
+                  },
+                },
+                extensionLayers: {
+                  select: {
+                    id: true,
+                  },
+                },
                 clippingPolygons: {
                   select: {
                     points: true,
@@ -240,7 +273,7 @@ const projectService = createService(
           },
         });
 
-        const visualAxes = await dbService.rawClient.visualAxis.findMany({
+        const visualAxes = await dbService.visualAxis.findMany({
           select: {
             id: true,
             description: true,
@@ -258,13 +291,19 @@ const projectService = createService(
           id: project.id,
           sasQueryParameters: sasQueryParameters.toString(),
           description: project.description,
+          camera: project.camera,
           img: project.img,
           title: project.title,
+          isReadOnly: project.ownerId !== session?.user.id,
           layers:
             project.projectLayers.length !== 0
               ? project.projectLayers.map((layer) => ({
                   id: layer.id,
                   name: layer.name,
+                  includedBaseLayers: layer.baseLayers.map((l) => l.id),
+                  includedExtensionLayers: layer.extensionLayers.map(
+                    (l) => l.id
+                  ),
                   clippingPolygons: layer.clippingPolygons.map(
                     (clippingPolygon) => {
                       const points: { x: number; y: number; z: number }[] = [];
@@ -315,6 +354,8 @@ const projectService = createService(
               : [
                   {
                     clippingPolygons: [],
+                    includedBaseLayers: [],
+                    includedExtensionLayers: [],
                     id: "defaultLayer",
                     name: "Default layer",
                     projectModels: [],
@@ -335,20 +376,22 @@ const projectService = createService(
               z: visualAxis.endPointZ,
             },
           })),
-          allAvailableBaseLayers: allAvailableBaseLayers
-            .filter((baseLayer) => baseLayer.href !== null)
-            .map((baseLayer) => ({
-              ...baseLayer,
-              containerName: baseLayer.containerName
-                ? blobStorageService.getContainerReadSASUrl(
-                    baseLayer.containerName
-                  )
-                : null,
-              href: baseLayer.href!,
-            })),
-          includedBaseLayers: project.includedBaseLayers.map(
-            (baseLayer) => baseLayer.id
-          ),
+          allAvailableBaseLayers: allAvailableBaseLayers.map((baseLayer) => ({
+            ...baseLayer,
+            href:
+              baseLayer.containerName !== null
+                ? createBaseLayerHref({
+                    containerName: baseLayer.containerName!,
+                    type: baseLayer.type,
+                  })
+                : baseLayer.href!,
+          })),
+          extensionLayers: project.extensionLayers.map((e) => ({
+            id: e.id,
+            href: e.href,
+            type: e.type,
+            name: e.name,
+          })),
           startingPoints: project.startingPoints.map((startingPoint) => ({
             startPoint: {
               x: startingPoint.startPointX,

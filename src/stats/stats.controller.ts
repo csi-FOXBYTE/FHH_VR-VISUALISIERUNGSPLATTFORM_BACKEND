@@ -1,7 +1,5 @@
 import { createController } from "@csi-foxbyte/fastify-toab";
 import { Type } from "@sinclair/typebox";
-import { getDbService } from "../db/db.service.js";
-import { on } from "events";
 
 const statsController = createController().rootPath("/stats");
 
@@ -29,23 +27,6 @@ statsController
   )
   .handler(async () => {
     return { memoryUsage: process.memoryUsage() };
-  });
-
-statsController
-  .addRoute("SSE", "/test")
-  .output(Type.String())
-  .handler(async function* ({ signal, services }) {
-    const dbService = await getDbService(services);
-
-    yield "OK";
-
-    for await (const [data] of on(
-      dbService.rawClient.role.subscribe({ operations: ["*"] }),
-      "change",
-      { signal }
-    )) {
-      yield data;
-    }
   });
 
 /*

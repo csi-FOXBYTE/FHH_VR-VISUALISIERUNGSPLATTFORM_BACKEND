@@ -3,14 +3,16 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
-import { getCacheService } from "../cache/cache.service.js";
 import { jwtDecrypt } from "jose";
-import { getDbService } from "../db/db.service.js";
+import { getCacheService } from "../cache/cache.service.js";
+import { getPrismaService } from "../prisma/prisma.service.js";
 
 const authService = createService(
   "auth",
   async ({ request, services }) => {
     const cache = await getCacheService(services);
+
+    const prismaService = await getPrismaService(services);
 
     async function fetchSession({
       sessionToken,
@@ -19,9 +21,8 @@ const authService = createService(
       sessionToken: string;
       userId: string;
     }) {
-      const dbService = await getDbService(services);
       try {
-        const user = await dbService.rawClient.user.findFirstOrThrow({
+        const user = await prismaService.user.findFirstOrThrow({
           where: {
             id: userId,
             sessions: {
@@ -60,6 +61,7 @@ const authService = createService(
 
     return {
       async getSession() {
+        console.log({ id: request.id })
         const tokenRaw = request.headers.authorization?.split(" ")[1];
 
         if (!tokenRaw) return null;
@@ -71,6 +73,7 @@ const authService = createService(
           }>(tokenRaw, Buffer.from(process.env.AUTH_SECRET!, "base64"), {
             audience: "urn:fhhvr",
             maxTokenAge: "60 minutes",
+            clockTolerance: "5 minutes",
           });
 
           if (!payload.sessionToken || !payload.userId) return null;

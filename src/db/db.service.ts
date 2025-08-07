@@ -3,32 +3,20 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
-import { PrismaClient } from "@prisma/client";
 import { enhance } from "@zenstackhq/runtime";
 import { getAuthService } from "../auth/auth.service.js";
-import realtimeExtension from "./extensions/realtimeExtension.js";
+import { getPrismaService } from "../prisma/prisma.service.js";
 
 const dbService = createService("db", async ({ services }) => {
-  const prisma = new PrismaClient().$extends(
-    realtimeExtension({ intervalMs: 5_000 })
-  );
+  const prismaService = await getPrismaService(services);
 
-  return {
-    rawClient: prisma,
-    /**
-     * Needs to be called within a request context!
-     * @returns
-     */
-    async getEnhancedClient() {
-      const authService = await getAuthService(services);
+  const authService = await getAuthService(services);
 
-      const session = await authService.getSession();
+  const session = await authService.getSession();
 
-      if (!session) throw new Error("Unauthenticated!");
+  if (!session) throw new Error("Unauthenticated!");
 
-      return enhance(prisma, session);
-    },
-  };
+  return enhance(prismaService, session);
 });
 
 /*

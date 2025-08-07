@@ -3,13 +3,13 @@ import {
   InferService,
   ServiceContainer,
 } from "@csi-foxbyte/fastify-toab";
-import { getDbService } from "../db/db.service.js";
 import { getCacheService } from "../cache/cache.service.js";
+import { getPrismaService } from "../prisma/prisma.service.js";
 
 const configurationService = createService(
   "configuration",
   async ({ services }) => {
-    const dbService = await getDbService(services);
+    const prismaService = await getPrismaService(services);
 
     const cacheService = await getCacheService(services);
 
@@ -18,19 +18,18 @@ const configurationService = createService(
         return await cacheService.wrap(
           "__config__",
           async () => {
-            const config =
-              await dbService.rawClient.configuration.findFirstOrThrow({
-                select: {
-                  defaultEPSG: true,
-                  globalStartPointX: true,
-                  globalStartPointY: true,
-                  globalStartPointZ: true,
-                  invitationEmailText: true,
-                  localProcessorFolder: true,
-                  maxParallelBaseLayerConversions: true,
-                  maxParallelFileConversions: true,
-                },
-              });
+            const config = await prismaService.configuration.findFirstOrThrow({
+              select: {
+                defaultEPSG: true,
+                globalStartPointX: true,
+                globalStartPointY: true,
+                globalStartPointZ: true,
+                invitationEmailText: true,
+                localProcessorFolder: true,
+                maxParallelBaseLayerConversions: true,
+                maxParallelFileConversions: true,
+              },
+            });
 
             return config;
           },

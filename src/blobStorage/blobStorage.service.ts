@@ -1,7 +1,6 @@
 import {
   BlobSASPermissions,
   BlobServiceClient,
-  BlockBlobUploadStreamOptions,
   generateBlobSASQueryParameters,
   StorageSharedKeyCredential,
 } from "@azure/storage-blob";
@@ -13,176 +12,204 @@ import {
 import dayjs from "dayjs";
 import { Readable } from "stream";
 import { getDeleteBlobWorkerQueue } from "./workers/deleteBlob.worker.js";
+import { getTokenService } from "../token/token.service.js";
 
-const blobStorageService = createService("blobStorage", async ({ queues }) => {
-  const deleteBlobQueue = getDeleteBlobWorkerQueue(queues);
+const blobStorageService = createService(
+  "blobStorage",
+  async ({ queues, services }) => {
+    const deleteBlobQueue = getDeleteBlobWorkerQueue(queues);
 
-  async function deleteLater(
-    containerName: string,
-    blobName: string,
-    delayMs: number
-  ) {
-    await deleteBlobQueue.add(
-      `${containerName}/${blobName}`,
-      { blobName, containerName },
-      {
-        delay: delayMs,
-      }
-    );
-  }
+    const tokenService = await getTokenService(services);
 
-  const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
-
-  if (!connectionString) {
-    throw Error("Please set AZURE_STORAGE_CONNECTION_STRING in your .env");
-  }
-
-  const blobServiceClient = BlobServiceClient.fromConnectionString(
-    connectionString,
-    {}
-  );
-
-  async function _getClient(containerName: string, blobName: string) {
-    const containerClient = blobServiceClient.getContainerClient(containerName);
-
-    await containerClient.createIfNotExists();
-
-    return containerClient.getBlockBlobClient(blobName);
-  }
-
-  async function _createBlobName(containerName: string) {
-    const containerClient = blobServiceClient.getContainerClient(containerName);
-
-    for (let i = 0; i < 512; i++) {
-      const blobName = crypto.randomUUID();
-
-      if (!(await containerClient.getBlockBlobClient(blobName).exists()))
-        return blobName;
+    async function deleteLater(
+      containerName: string,
+      blobName: string,
+      delayMs: number
+    ) {
+      await deleteBlobQueue.add(
+        `${containerName}/${blobName}`,
+        { blobName, containerName },
+        {
+          delay: delayMs,
+        }
+      );
     }
 
-    throw new Error("Could not find a free blob name!");
-  }
+    const connectionString = process.env.AZURE_STORAGE_CONNECTION_STRING;
 
-  return {
-    async uploadData(
-      data: Buffer | Blob,
-      containerName: string,
-      blobName?: string
-    ) {
-      if (!blobName) blobName = await _createBlobName(containerName);
+    if (!connectionString) {
+      throw Error("Please set AZURE_STORAGE_CONNECTION_STRING in your .env");
+    }
 
-      const client = await _getClient(containerName, blobName);
+    const blobServiceClient = BlobServiceClient.fromConnectionString(
+      connectionString,
+      {}
+    );
 
-      const response = await client.uploadData(data);
-
-      return { blobName, href: client.url.toString(), ...response };
-    },
-
-    async getUploadSASUrl(containerName: string) {
-      const blobName = await _createBlobName(containerName);
-
-      const client = await _getClient(containerName, blobName);
-
-      const permissions = new BlobSASPermissions();
-      permissions.create = true;
-      permissions.write = true;
-      permissions.add = true;
-      permissions.read = true;
-
-      const sasToken = generateBlobSASQueryParameters(
-        {
-          containerName,
-          blobName,
-          permissions,
-          expiresOn: dayjs().add(1, "day").toDate(),
-        },
-        blobServiceClient.credential as StorageSharedKeyCredential
-      );
-
-      await deleteLater(containerName, blobName, 24 * 60 * 60 * 1000); // Delete after 1 day
-
-      return `${client.url}?${sasToken.toString()}`;
-    },
-
-    getContainerSASToken(
-      containerName: string,
-      permissions: BlobSASPermissions
-    ) {
-      return generateBlobSASQueryParameters(
-        { containerName, permissions, expiresOn: dayjs().add(1, "day").toDate() },
-        blobServiceClient.credential as StorageSharedKeyCredential,
-        
-      );
-    },
-
-    getContainerReadSASUrl(containerName: string) {
+    async function _getClient(containerName: string, blobName: string) {
       const containerClient =
         blobServiceClient.getContainerClient(containerName);
 
-      const permissions = new BlobSASPermissions();
-      permissions.read = true;
+      await containerClient.createIfNotExists();
 
-      const sasToken = generateBlobSASQueryParameters(
-        {
-          containerName,
-          permissions,
-          expiresOn: dayjs().add(1, "day").toDate(),
-        },
-        blobServiceClient.credential as StorageSharedKeyCredential
-      );
+      return containerClient.getBlockBlobClient(blobName);
+    }
 
-      return `${containerClient.url}?${sasToken.toString()}`;
-    },
+    async function _createBlobName(containerName: string) {
+      const containerClient =
+        blobServiceClient.getContainerClient(containerName);
 
-    async uploadStream(
-      data: Readable,
-      containerName: string,
-      blobName?: string,
-      onProgress?: BlockBlobUploadStreamOptions["onProgress"]
-    ) {
-      if (!blobName) blobName = await _createBlobName(containerName);
+      for (let i = 0; i < 512; i++) {
+        const blobName = crypto.randomUUID();
 
-      const client = await _getClient(containerName, blobName);
+        if (!(await containerClient.getBlockBlobClient(blobName).exists()))
+          return blobName;
+      }
 
-      const response = await client.uploadStream(data, 4 * 1024 * 1024, 1, {
-        onProgress,
-      });
+      throw new Error("Could not find a free blob name!");
+    }
 
-      return { blobName, href: client.url.toString(), ...response };
-    },
+    async function verifyUploadToken(token: string) {
+      const {
+        payload: { blobName, containerName },
+      } = await tokenService.verifyToken<{
+        blobName: string;
+        containerName: string;
+      }>(token);
 
-    async downloadToBuffer(containerName: string, blobName: string) {
-      console.log({ containerName, blobName });
-      const client = await _getClient(containerName, blobName);
+      return { blobName, containerName };
+    }
 
-      return await client.downloadToBuffer();
-    },
+    return {
+      async uploadData(
+        data: Buffer | Blob,
+        containerName: string,
+        blobName?: string
+      ) {
+        if (!blobName) blobName = await _createBlobName(containerName);
 
-    async downloadToStream(containerName: string, blobName: string) {
-      const client = await _getClient(containerName, blobName);
+        const client = await _getClient(containerName, blobName);
 
-      return await client.download();
-    },
+        const response = await client.uploadData(data);
 
-    async downloadToFile(
-      containerName: string,
-      blobName: string,
-      filePath: string
-    ) {
-      const client = await _getClient(containerName, blobName);
+        return { blobName, href: client.url.toString(), ...response };
+      },
 
-      return await client.downloadToFile(filePath);
-    },
+      getContainerSASToken(
+        containerName: string,
+        permissions: BlobSASPermissions
+      ) {
+        return generateBlobSASQueryParameters(
+          {
+            containerName,
+            permissions,
+            expiresOn: dayjs().add(1, "day").toDate(),
+          },
+          blobServiceClient.credential as StorageSharedKeyCredential
+        );
+      },
 
-    async delete(containerName: string, blobName: string) {
-      const client = await _getClient(containerName, blobName);
+      getContainerReadSASUrl(containerName: string) {
+        const containerClient =
+          blobServiceClient.getContainerClient(containerName);
 
-      return await client.delete();
-    },
+        const permissions = new BlobSASPermissions();
+        permissions.read = true;
 
-    deleteLater,
-  };
-});
+        const sasToken = generateBlobSASQueryParameters(
+          {
+            containerName,
+            permissions,
+            expiresOn: dayjs().add(1, "day").toDate(),
+          },
+          blobServiceClient.credential as StorageSharedKeyCredential
+        );
+
+        return `${containerClient.url}?${sasToken.toString()}`;
+      },
+
+      async uploadStream(
+        data: Readable,
+        containerName: string,
+        blobName?: string
+      ) {
+        if (!blobName) blobName = await _createBlobName(containerName);
+
+        const client = await _getClient(containerName, blobName);
+
+        const response = await client.uploadStream(data, 1 * 1024 * 1024, 1);
+
+        return { blobName, href: client.url.toString(), ...response };
+      },
+
+      async stageBlock(data: Buffer, token: string, blockId: string) {
+        const { blobName, containerName } = await verifyUploadToken(token);
+
+        const client = await _getClient(containerName, blobName);
+
+        await client.stageBlock(blockId, data, data.length);
+      },
+
+      async createUploadToken(containerName: string) {
+        const blobName = await _createBlobName(containerName);
+
+        const token = await tokenService.createToken(
+          { containerName, blobName },
+          "1d"
+        );
+
+        await deleteLater(containerName, blobName, 24 * 60 * 60 * 1000); // Delete after 1 day
+
+        return token;
+      },
+
+      verifyUploadToken,
+
+      async commitBlock(token: string) {
+        const { blobName, containerName } = await verifyUploadToken(token);
+
+        const client = await _getClient(containerName, blobName);
+
+        const blockListResponse = await client.getBlockList("uncommitted");
+
+        const blockIds =
+          blockListResponse.uncommittedBlocks?.map((block) => block.name) ?? [];
+
+        await client.commitBlockList(blockIds);
+      },
+
+      async downloadToBuffer(containerName: string, blobName: string) {
+        const client = await _getClient(containerName, blobName);
+
+        return await client.downloadToBuffer();
+      },
+
+      async downloadToStream(containerName: string, blobName: string) {
+        const client = await _getClient(containerName, blobName);
+
+        return await client.download();
+      },
+
+      async downloadToFile(
+        containerName: string,
+        blobName: string,
+        filePath: string
+      ) {
+        const client = await _getClient(containerName, blobName);
+
+        return await client.downloadToFile(filePath);
+      },
+
+      async delete(containerName: string, blobName: string) {
+        const client = await _getClient(containerName, blobName);
+
+        return await client.delete();
+      },
+
+      deleteLater,
+    };
+  }
+);
 
 /*
 AUTOGENERATED!

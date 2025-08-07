@@ -87,21 +87,21 @@ model Authenticator {
 }
 
 model Project {
-  owner                 User?           @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner                 User?            @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   ownerId               String?
-  id                    String          @id() @default(cuid())
-  createdAt             DateTime        @default(now())
-  updatedAt             DateTime        @updatedAt()
-  title                 String          @db.Text()
-  description           String          @db.Text()
+  id                    String           @id() @default(cuid())
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt()
+  title                 String           @db.Text()
+  description           String           @db.Text()
   visibleForGroups      Group[]
-  visibleForUsers       User[]          @relation("visibleForUsers")
+  visibleForUsers       User[]           @relation("visibleForUsers")
   startingPoints        StartingPoint[]
-  includedBaseLayers    BaseLayer[]
-  includedProjectLayers ProjectLayer[]  @relation("includedInProjects")
+  extensionLayers       ExtensionLayer[]
+  includedProjectLayers ProjectLayer[]   @relation("includedInProjects")
   projectLayers         ProjectLayer[]
-  variants              Variant[]
-  img                   String?         @db.Text()
+  img                   String?          @db.Text()
+  camera                String?          @db.Text()
   events                Event[]
 }
 
@@ -178,17 +178,6 @@ model StartingPoint {
   img         String   @db.Text()
 }
 
-model Variant {
-  id            String         @id() @default(cuid())
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt()
-  project       Project        @relation(fields: [projectId], references: [id])
-  projectId     String
-  name          String
-  description   String
-  projectLayers ProjectLayer[]
-}
-
 model Group {
   id                String      @id() @default(cuid())
   createdAt         DateTime    @default(now())
@@ -223,25 +212,38 @@ model Permission {
 }
 
 model BaseLayer {
-  owner              User?     @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  ownerId            String?
-  id                 String    @id() @default(cuid())
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt()
-  name               String
+  owner                   User?          @relation(fields: [ownerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ownerId                 String?
+  id                      String         @id() @default(cuid())
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt()
+  name                    String
   /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
-  type               String
-  visibleForGroups   Group[]
+  type                    String
+  visibleForGroups        Group[]
   /// Can be one of PENDING | FAILED | COMPLETED
-  status             String    @default("COMPLETED")
-  progress           Float     @default(0)
-  sizeGB             Float
-  description        String    @default("")
+  status                  String         @default("COMPLETED")
+  progress                Float          @default(0)
+  sizeGB                  Float
+  description             String         @default("")
   /// A layer can either be stored in azure or externally.
-  href               String?
+  href                    String?
   /// Containername is only used when its stored in azure.
-  containerName      String?
-  includedInProjects Project[]
+  containerName           String?
+  includedInProjectLayers ProjectLayer[]
+}
+
+model ExtensionLayer {
+  id                      String         @id() @default(cuid())
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt()
+  name                    String
+  /// Can be one of 3D-TILES, TERRAIN, IMAGERY, WMS
+  type                    String
+  project                 Project        @relation(fields: [projectId], references: [id])
+  projectId               String
+  includedInProjectLayers ProjectLayer[]
+  href                    String
 }
 
 model ProjectLayer {
@@ -253,8 +255,9 @@ model ProjectLayer {
   name               String
   projectModels      ProjectModel[]
   clippingPolygons   ClippingPolygon[]
+  baseLayers         BaseLayer[]
+  extensionLayers    ExtensionLayer[]
   includedInProjects Project[]         @relation("includedInProjects")
-  associatedVariants Variant[]
   project            Project           @relation(fields: [projectId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   projectId          String
 }

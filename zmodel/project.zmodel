@@ -5,19 +5,19 @@ import "event"
 import "layer"
 
 model Project extends Base, Ownable {
-    title                 String          @db.Text
-    description           String          @db.Text
+    title                 String           @db.Text
+    description           String           @db.Text
 
     visibleForGroups      Group[]
-    visibleForUsers       User[]          @relation("visibleForUsers")
+    visibleForUsers       User[]           @relation("visibleForUsers")
 
     startingPoints        StartingPoint[]
-    includedBaseLayers    BaseLayer[]
-    includedProjectLayers ProjectLayer[]  @relation("includedInProjects")
+    extensionLayers       ExtensionLayer[]
+    includedProjectLayers ProjectLayer[]   @relation("includedInProjects")
     projectLayers         ProjectLayer[]
-    variants              Variant[]
 
-    img                   String?         @db.Text
+    img                   String?          @db.Text
+    camera                String?          @db.Text
 
     events                Event[]
 
@@ -92,20 +92,4 @@ model StartingPoint extends DirectedPoint {
     @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:READ']]])
     @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:UPDATE']]])
     @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'STARTING_POINT:DELETE']]])
-}
-
-model Variant extends Base {
-    project       Project        @relation(fields: [projectId], references: [id])
-    projectId     String
-
-    name          String
-    description   String
-
-    projectLayers ProjectLayer[]
-
-    @@allow('all', auth().id == project.owner.id)
-    @@allow('create', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:CREATE']]])
-    @@allow('read', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:READ']]])
-    @@allow('update', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:UPDATE']]])
-    @@allow('delete', auth().assignedGroups?[assignedRoles?[assignedPermissions?[name == 'VARIANT:DELETE']]])
 }
