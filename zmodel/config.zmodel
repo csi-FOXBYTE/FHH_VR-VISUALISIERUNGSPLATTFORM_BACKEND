@@ -14,5 +14,17 @@ model Configuration extends Base, AdminPrivilege {
 
     localProcessorFolder            String
 
+    invitationEmailDE String
+    invitationEmailEN String
+    
+    invitationCancelledEmailDE String
+    invitationCancelledEmailEN String
+
+    invitationUpdatedEmailDE String
+    invitationUpdatedEmailEN String
+
+    predeletionEmailDE String
+    predeletionEmailEN String
+
     @@allow('all', true)
 }

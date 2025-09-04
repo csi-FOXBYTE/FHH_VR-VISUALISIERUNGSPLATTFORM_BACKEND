@@ -16,6 +16,8 @@ model Group extends Base, AdminPrivilege {
 
     defaultFor        String[]
 
+    @@allow('update', auth() != null)
+
     @@deny('delete', isAdminGroup == true)
 
     @@allow('read', true)

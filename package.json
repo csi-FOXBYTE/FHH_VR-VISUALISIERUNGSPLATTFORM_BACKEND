@@ -1,6 +1,6 @@
 {
   "name": "WebBackend",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "",
   "main": ".dist/index.js",
   "type": "module",
@@ -10,7 +10,7 @@
     "lint": "oxlint && eslint",
     "dev": "tsx dev.ts",
     "build": "tsx build.ts",
-    "publish:docker": "docker build -t fhhvr-webbackend:0.1.2 . --secret id=npmrc,src=%USERPROFILE%/.npmrc --secret id=env,src=.env && docker tag fhhvr-webbackend:0.1.2 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.1.2 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.1.2"
+    "publish:docker": "docker build -t fhhvr-webbackend:0.1.4 . --secret id=npmrc,src=%USERPROFILE%/.npmrc --secret id=env,src=.env && docker tag fhhvr-webbackend:0.1.4 fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.1.4 && docker push fhhvrdockerregistry.azurecr.io/fhhvr-webbackend:0.1.4"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -61,6 +61,7 @@
     "ejs": "^3.1.10",
     "esbuild-plugin-copy": "^2.1.1",
     "fastify": "^5.3.3",
+    "handlebars": "^4.7.8",
     "ics": "^3.8.1",
     "ioredis": "^5.6.1",
     "jose": "^6.0.11",

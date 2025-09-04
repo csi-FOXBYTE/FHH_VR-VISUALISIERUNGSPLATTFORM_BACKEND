@@ -1,14 +1,8 @@
 {
   "notifications": {
-    "event-invitation-title": "Title",
-    "event-invitation-greeting": "Hello {userName},",
-    "event-invitation-intro": "You are cordially invited to {eventTitle} – an exclusive online event in virtual reality!",
-    "event-invitation-datetime-label": "Date & Time:",
-    "event-invitation-datetime": "{relativeTime} (local time)",
-    "event-invitation-online-info": "This event will take place exclusively online in VR. Access is simple via our VR app. The access details are available directly in the app.",
-    "event-invitation-attachment-info": "Attached you will find the calendar file (event.ics) to add the appointment directly to your calendar.",
-    "event-invitation-outro": "We look forward to meeting you in the virtual world!",
-    "event-invitation-signoff": "Kind regards,",
-    "event-invitation-team": "Your Event Team"
+    "event-invitation-title": "Veranstaltungseinladung | {title}",
+    "event-invitation-cancellation-title": "Veranstaltungsabsage | {title}",
+    "event-invitation-update-title": "Veranstaltungsänderung | {title}",
+    "predeletion-due-to-inactivity-title": "Löschung des Accounts steht bevor"
   }
 }

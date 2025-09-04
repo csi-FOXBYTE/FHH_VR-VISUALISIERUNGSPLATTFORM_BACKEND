@@ -6,33 +6,35 @@ import {
   ControllerRegistry,
   ServiceRegistry,
   WorkerRegistry,
-} from "@csi-foxbyte/fastify-toab";import p_60b5e98d10af4ca5bcc0f6a684bffcc7 from "./auth/auth.service.js";
-import p_5998a4c020e140b4ad6b584260794c66 from "./blobStorage/blobStorage.service.js";
-import p_696e9e7fbd4a453d9c1786ab3afb2f10 from "./cache/cache.service.js";
-import p_b514b6d9ac43495289c0ec64a76497d1 from "./configuration/configuration.service.js";
-import p_47bd5cf620094b779da4466edea6cfa2 from "./converter3D/converter3D.service.js";
-import p_621e489fca79467d8d09ff2b263c0dd0 from "./db/db.service.js";
-import p_ac7bb3da2d1d4fc79b63ff8f4cbe64b0 from "./email/email.service.js";
-import p_dbdc6f4a37d14642a75d26a1bd2dafc9 from "./events/events.service.js";
-import p_28084b65bc9f4f6a8970e6e3aa6e3658 from "./notification/notification.service.js";
-import p_454ef62c06424cbfb8264426b91b494a from "./prisma/prisma.service.js";
-import p_43b0fe3d6f6e405c9545666e01eca7a5 from "./project/project.service.js";
-import p_d18c8789cf084d978d37cd417b558d50 from "./stats/stats.service.js";
-import p_a8fd0676a69e49918076ecd1f561973f from "./token/token.service.js";
-import p_cc68f818d1414e7c873003f9413659c5 from "./translation/translation.service.js";
-import p_bb99681e053042c4b4f141291f7c975b from "./user/user.service.js";
-import p_8bb74426e24349818257c6317c34c7af from "./blobStorage/workers/deleteBlob.worker.js";
-import p_230c2cbdf8594234aa03f5de1807f0fc from "./converter3D/workers/convert3DTiles.worker.js";
-import p_11ae9544b8c943b69001a6f69b8c16b4 from "./converter3D/workers/convertProjectModel.worker.js";
-import p_e1a94902c3d44e068229a4a46ef9bdbf from "./converter3D/workers/convertTerrain.worker.js";
-import p_20ce594a63bd4c898f945bc0d3d6d681 from "./converter3D/workers/updateConverterWorkerConfigurations.worker.js";
-import p_38fb88b7d2db473dbf7cf52fd32bdaa5 from "./events/workers/removeOldEvents.worker.js";
-import p_fca5ed05f9ec45c3a98e2fb8312fcbca from "./user/workers/deleteInactiveUsers.worker.js";
-import p_b5a803e7c56f413681fefe08a7514a83 from "./converter3D/converter3D.controller.js";
-import p_2dfbed67788243a4b67386ed009ee896 from "./events/events.controller.js";
-import p_c58caf8ca57146c9bd8ab37a1abf6962 from "./project/project.controller.js";
-import p_5ae9b1ea83f24f4089ccc111b8513679 from "./stats/stats.controller.js";
-import p_a300bde4363548b6b25e6be9ef749d07 from "./user/user.controller.js";
+} from "@csi-foxbyte/fastify-toab";import p_9db516c962b1419e8f6d71403d869393 from "./auth/auth.service.js";
+import p_3657b86273c44326802fd12b377f7733 from "./baseLayer/baseLayer.service.js";
+import p_2f9034a11a494afcafe8ad0276d1d3c4 from "./blobStorage/blobStorage.service.js";
+import p_c5317982bb1045b485b365ce58bb6d8e from "./cache/cache.service.js";
+import p_039f1e2dbd6e414199000b77b1fab5a3 from "./configuration/configuration.service.js";
+import p_b837d0d1396d47d38777793a52a8c314 from "./converter3D/converter3D.service.js";
+import p_a39bda29639e4fcba00f4471333151e8 from "./db/db.service.js";
+import p_ffc197f3ed7c4fcca49864b35a0920c3 from "./email/email.service.js";
+import p_68ce594000fb4ec19b0a6b489bb834e2 from "./events/events.service.js";
+import p_678b1a7bb4604d55b88b59d0348d7f47 from "./notification/notification.service.js";
+import p_b720c6b4f8104aac8d733da7fb9b5030 from "./prisma/prisma.service.js";
+import p_f5d53ae1eeb840488f2b8b9293656453 from "./project/project.service.js";
+import p_0e68a9a251ab4aef8cebcbf76864a5fa from "./stats/stats.service.js";
+import p_f87190dc2a254479861bac1a2fd0e531 from "./token/token.service.js";
+import p_0a78f8082d0e41a9a6d42d0e4a84dc39 from "./translation/translation.service.js";
+import p_8f42b34ffccf43818180fb3500a2e7fa from "./user/user.service.js";
+import p_ded405c76e8245fabb982d8032e2b518 from "./blobStorage/workers/deleteBlob.worker.js";
+import p_e272281981c54254a8905b1d444a3492 from "./converter3D/workers/convert3DTiles.worker.js";
+import p_c48857a43cfc4c6185d2c2f08a4dd841 from "./converter3D/workers/convertProjectModel.worker.js";
+import p_3162ac97193b4ca0befea830642108e8 from "./converter3D/workers/convertTerrain.worker.js";
+import p_5ebdf9da4b044c5b8ea9b04b24a62ac5 from "./converter3D/workers/updateConverterWorkerConfigurations.worker.js";
+import p_794534214c654ecca0d1d0848a6e672f from "./events/workers/removeOldEvents.worker.js";
+import p_903f2d05e1f54ec59969a525583c9f74 from "./user/workers/deleteInactiveUsers.worker.js";
+import p_f457cd4a0bbe4d29bc0791c0d3c86493 from "./baseLayer/baseLayer.controller.js";
+import p_334f07f0e01048c08b06d39d15474f38 from "./converter3D/converter3D.controller.js";
+import p_fbddc4c962a9469095c79e1718ff11af from "./events/events.controller.js";
+import p_ef26d7ed2ec0416dbb55c18c2be17c49 from "./project/project.controller.js";
+import p_0d5e2c9c81d14ee7912d7d4affeca6ce from "./stats/stats.controller.js";
+import p_887fdfac4ac24fa2b289aec29e3a12df from "./user/user.controller.js";
 
 export async function getRegistries(dontInitializeWorkers?: boolean) {
   let workerRegistryRef: { current: WorkerRegistry | null } = {
@@ -40,40 +42,42 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   };
 
   const serviceRegistry = new ServiceRegistry(workerRegistryRef);
-  serviceRegistry.register(p_60b5e98d10af4ca5bcc0f6a684bffcc7);
-  serviceRegistry.register(p_5998a4c020e140b4ad6b584260794c66);
-  serviceRegistry.register(p_696e9e7fbd4a453d9c1786ab3afb2f10);
-  serviceRegistry.register(p_b514b6d9ac43495289c0ec64a76497d1);
-  serviceRegistry.register(p_47bd5cf620094b779da4466edea6cfa2);
-  serviceRegistry.register(p_621e489fca79467d8d09ff2b263c0dd0);
-  serviceRegistry.register(p_ac7bb3da2d1d4fc79b63ff8f4cbe64b0);
-  serviceRegistry.register(p_dbdc6f4a37d14642a75d26a1bd2dafc9);
-  serviceRegistry.register(p_28084b65bc9f4f6a8970e6e3aa6e3658);
-  serviceRegistry.register(p_454ef62c06424cbfb8264426b91b494a);
-  serviceRegistry.register(p_43b0fe3d6f6e405c9545666e01eca7a5);
-  serviceRegistry.register(p_d18c8789cf084d978d37cd417b558d50);
-  serviceRegistry.register(p_a8fd0676a69e49918076ecd1f561973f);
-  serviceRegistry.register(p_cc68f818d1414e7c873003f9413659c5);
-  serviceRegistry.register(p_bb99681e053042c4b4f141291f7c975b);
+  serviceRegistry.register(p_9db516c962b1419e8f6d71403d869393);
+  serviceRegistry.register(p_3657b86273c44326802fd12b377f7733);
+  serviceRegistry.register(p_2f9034a11a494afcafe8ad0276d1d3c4);
+  serviceRegistry.register(p_c5317982bb1045b485b365ce58bb6d8e);
+  serviceRegistry.register(p_039f1e2dbd6e414199000b77b1fab5a3);
+  serviceRegistry.register(p_b837d0d1396d47d38777793a52a8c314);
+  serviceRegistry.register(p_a39bda29639e4fcba00f4471333151e8);
+  serviceRegistry.register(p_ffc197f3ed7c4fcca49864b35a0920c3);
+  serviceRegistry.register(p_68ce594000fb4ec19b0a6b489bb834e2);
+  serviceRegistry.register(p_678b1a7bb4604d55b88b59d0348d7f47);
+  serviceRegistry.register(p_b720c6b4f8104aac8d733da7fb9b5030);
+  serviceRegistry.register(p_f5d53ae1eeb840488f2b8b9293656453);
+  serviceRegistry.register(p_0e68a9a251ab4aef8cebcbf76864a5fa);
+  serviceRegistry.register(p_f87190dc2a254479861bac1a2fd0e531);
+  serviceRegistry.register(p_0a78f8082d0e41a9a6d42d0e4a84dc39);
+  serviceRegistry.register(p_8f42b34ffccf43818180fb3500a2e7fa);
 
   const workerRegistry = new WorkerRegistry(serviceRegistry);
-  await workerRegistry.register(p_8bb74426e24349818257c6317c34c7af, dontInitializeWorkers);
-  await workerRegistry.register(p_230c2cbdf8594234aa03f5de1807f0fc, dontInitializeWorkers);
-  await workerRegistry.register(p_11ae9544b8c943b69001a6f69b8c16b4, dontInitializeWorkers);
-  await workerRegistry.register(p_e1a94902c3d44e068229a4a46ef9bdbf, dontInitializeWorkers);
-  await workerRegistry.register(p_20ce594a63bd4c898f945bc0d3d6d681, dontInitializeWorkers);
-  await workerRegistry.register(p_38fb88b7d2db473dbf7cf52fd32bdaa5, dontInitializeWorkers);
-  await workerRegistry.register(p_fca5ed05f9ec45c3a98e2fb8312fcbca, dontInitializeWorkers);
+  await workerRegistry.register(p_ded405c76e8245fabb982d8032e2b518, dontInitializeWorkers);
+  await workerRegistry.register(p_e272281981c54254a8905b1d444a3492, dontInitializeWorkers);
+  await workerRegistry.register(p_c48857a43cfc4c6185d2c2f08a4dd841, dontInitializeWorkers);
+  await workerRegistry.register(p_3162ac97193b4ca0befea830642108e8, dontInitializeWorkers);
+  await workerRegistry.register(p_5ebdf9da4b044c5b8ea9b04b24a62ac5, dontInitializeWorkers);
+  await workerRegistry.register(p_794534214c654ecca0d1d0848a6e672f, dontInitializeWorkers);
+  await workerRegistry.register(p_903f2d05e1f54ec59969a525583c9f74, dontInitializeWorkers);
   workerRegistryRef.current = workerRegistry;
 
   await workerRegistry.resumeQueues();
 
   const controllerRegistry = new ControllerRegistry(serviceRegistry);
-  controllerRegistry.register(p_b5a803e7c56f413681fefe08a7514a83);
-  controllerRegistry.register(p_2dfbed67788243a4b67386ed009ee896);
-  controllerRegistry.register(p_c58caf8ca57146c9bd8ab37a1abf6962);
-  controllerRegistry.register(p_5ae9b1ea83f24f4089ccc111b8513679);
-  controllerRegistry.register(p_a300bde4363548b6b25e6be9ef749d07);
+  controllerRegistry.register(p_f457cd4a0bbe4d29bc0791c0d3c86493);
+  controllerRegistry.register(p_334f07f0e01048c08b06d39d15474f38);
+  controllerRegistry.register(p_fbddc4c962a9469095c79e1718ff11af);
+  controllerRegistry.register(p_ef26d7ed2ec0416dbb55c18c2be17c49);
+  controllerRegistry.register(p_0d5e2c9c81d14ee7912d7d4affeca6ce);
+  controllerRegistry.register(p_887fdfac4ac24fa2b289aec29e3a12df);
 
   return { controllerRegistry, serviceRegistry, workerRegistry };
 }

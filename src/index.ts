@@ -28,6 +28,25 @@ await fastify.register(fastifyOtel.plugin(), {
   logLevel: "info",
 });
 
+// This is a workaround for an azure quirk where empty bodied responses are wrongly manipulated
+fastify.addContentTypeParser(
+  '*',
+  { parseAs: 'buffer' },
+  (req, body, done) => {
+    // Treat zero-length as "no body"
+    if (!body || body.length === 0) return done(null, null);
+
+    // Optional: if header is missing but it looks like JSON, try parsing
+    const ct = req.headers['content-type'] || '';
+    if (!ct && body[0] === 0x7B /* '{' */) {
+      try { return done(null, JSON.parse(body.toString('utf8'))); }
+      catch { }
+    }
+
+    return done(null, body); // raw Buffer
+  }
+);
+
 process.on("unhandledRejection", (reason) => {
   fastify.log.error({ err: reason, type: "UNHANDLED_REJECTION" });
 });

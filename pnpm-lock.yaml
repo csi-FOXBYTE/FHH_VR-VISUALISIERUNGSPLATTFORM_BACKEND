@@ -122,6 +122,9 @@ importers:
       fastify:
         specifier: ^5.3.3
         version: 5.3.3
+      handlebars:
+        specifier: ^4.7.8
+        version: 4.7.8
       ics:
         specifier: ^3.8.1
         version: 3.8.1

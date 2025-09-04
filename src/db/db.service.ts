@@ -15,6 +15,8 @@ const dbService = createService("db", async ({ services }) => {
   if (!session) throw new Error("Unauthenticated!");
 
   return enhance(prismaService, session).$extends(realtimeExtension());
+}, {
+  scope: "REQUEST",
 });
 
 /*

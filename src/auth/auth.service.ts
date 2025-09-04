@@ -34,12 +34,7 @@ const authService = createService(
               select: {
                 assignedRoles: {
                   select: {
-                    assignedPermissions: {
-                      select: {
-                        name: true,
-                        id: true,
-                      },
-                    },
+                    assignedPermissions: true,
                   },
                 },
               },

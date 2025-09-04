@@ -5,7 +5,7 @@ type Notification = {
   title: string;
   content: string;
   attachments: File[];
-  from: string;
+  from: string | null;
   to: string;
 };
 
@@ -15,6 +15,7 @@ const notificationService = createService(
     const emailService = await getEmailService(services);
 
     async function notify(notifications: Notification[]) {
+      console.log(notifications);
       for (const notification of notifications) {
         await emailService.sendMail({
           to: notification.to,

@@ -26,11 +26,11 @@ model BaseLayer extends Layer, Base, Ownable, AdminPrivilege {
   visibleForGroups        Group[]
 
   status                  BASE_LAYER_CONVERSION_STATUS @default(COMPLETED)
-  progress                Float                     @default(0)
+  progress                Float                        @default(0)
 
   sizeGB                  Float
 
-  description             String                    @default("")
+  description             String                       @default("")
 
   /// A layer can either be stored in azure or externally.
   href                    String?
@@ -44,4 +44,6 @@ model BaseLayer extends Layer, Base, Ownable, AdminPrivilege {
   @@allow('read', visibleForGroups?[assignedUsers?[id == auth().id]])
 
   @@allow('create', auth().assignedGroups?[assignedRoles?[BASE_LAYER_OWNER in assignedPermissions]])
+
+  @@allow('update', true)
 }

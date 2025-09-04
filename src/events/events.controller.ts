@@ -8,6 +8,7 @@ import {
   eventsUpdateRequestDTO,
 } from "./events.dto.js";
 import { getDbService, getEventsService } from "../@internals/index.js";
+import { $Enums } from "@prisma/client";
 
 const eventsController = createController()
   .use(authMiddleware)
@@ -100,13 +101,22 @@ eventsController
   });
 
 eventsController
+  .addRoute("DELETE", "/:id")
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async ({ services, params }) => {
+    const eventsService = await getEventsService(services);
+
+    await eventsService.cancelEvent(params);
+  });
+
+eventsController
   .addRoute("SSE", "/:id/status")
   .params(Type.Object({ id: Type.String() }))
   .output(
     Type.Object({
       id: Type.String(),
       joinCode: Type.Optional(Type.String()),
-      status: Type.String(),
+      status: Type.Enum($Enums.EVENT_STATUS),
       endTime: Type.String(),
       startTime: Type.String(),
       title: Type.String(),
@@ -164,8 +174,8 @@ eventsController
 
     yield await getEvent(params.id);
 
-    for await (const value of on(events, "change", { signal })) {
-      yield value;
+    for await (const _ of on(events, "change", { signal })) {
+      yield await getEvent(params.id);
     }
   });
 

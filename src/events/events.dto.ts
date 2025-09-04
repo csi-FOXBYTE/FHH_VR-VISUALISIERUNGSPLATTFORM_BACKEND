@@ -37,6 +37,6 @@ export const eventsUpdateRequestDTO = Type.Object({
   title: Type.Optional(Type.String()),
   attendees: Type.Optional(Type.Array(Type.String())),
   moderators: Type.Array(Type.String()),
-  project: Type.Optional(Type.String()),
+  project: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 });
 export type EventsUpdateRequestDTO = Static<typeof eventsUpdateRequestDTO>;

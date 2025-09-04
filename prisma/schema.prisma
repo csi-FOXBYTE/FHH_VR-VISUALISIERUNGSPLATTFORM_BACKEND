@@ -45,6 +45,7 @@ enum EVENT_STATUS {
   MISSING_HOST
   ACTIVE
   PLANNED
+  CANCELED
   END
 }
 
@@ -320,4 +321,12 @@ model Configuration {
   maxParallelBaseLayerConversions Float
   invitationEmailText             String   @db.Text()
   localProcessorFolder            String
+  invitationEmailDE               String
+  invitationEmailEN               String
+  invitationCancelledEmailDE      String
+  invitationCancelledEmailEN      String
+  invitationUpdatedEmailDE        String
+  invitationUpdatedEmailEN        String
+  predeletionEmailDE              String
+  predeletionEmailEN              String
 }

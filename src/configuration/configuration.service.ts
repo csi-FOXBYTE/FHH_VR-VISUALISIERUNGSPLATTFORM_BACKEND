@@ -15,18 +15,7 @@ const configurationService = createService(
         return await cacheService.wrap(
           "__config__",
           async () => {
-            const config = await prismaService.configuration.findFirstOrThrow({
-              select: {
-                defaultEPSG: true,
-                globalStartPointX: true,
-                globalStartPointY: true,
-                globalStartPointZ: true,
-                invitationEmailText: true,
-                localProcessorFolder: true,
-                maxParallelBaseLayerConversions: true,
-                maxParallelFileConversions: true,
-              },
-            });
+            const config = await prismaService.configuration.findFirstOrThrow();
 
             return config;
           },
