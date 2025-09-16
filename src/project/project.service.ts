@@ -5,6 +5,7 @@ import sharp from "sharp";
 import {
   getAuthService,
   getBlobStorageService,
+  getConfigurationService,
   getDbService,
 } from "../@internals/index.js";
 
@@ -14,6 +15,7 @@ const projectService = createService(
     const dbService = await getDbService(services);
 
     const blobStorageService = await getBlobStorageService(services);
+    const configurationService = await getConfigurationService(services);
 
     const authService = await getAuthService(services);
 
@@ -273,10 +275,13 @@ const projectService = createService(
       async getUnityProject(id: string): Promise<UnityProjectDTO> {
         const project = await getProject(id);
 
+        const config = await configurationService.getConfiguration();
+
         return {
           description: project.description,
           id: project.id,
           myRole: "MODERATOR",
+          maximumFlyingHeight: config.maximumFlyingHeight,
           name: project.title,
           startingPoints: project.startingPoints.map((s) => ({
             description: s.description,

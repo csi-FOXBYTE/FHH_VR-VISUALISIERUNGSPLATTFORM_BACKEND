@@ -321,6 +321,13 @@ model Configuration {
   maxParallelBaseLayerConversions Float
   invitationEmailText             String   @db.Text()
   localProcessorFolder            String
+  emailUser                       String
+  emailPassword                   String
+  emailHost                       String
+  emailPort                       Int
+  emailSecure                     Boolean
+  emailPlatformAddress            String
+  maximumFlyingHeight             Float
   invitationEmailDE               String
   invitationEmailEN               String
   invitationCancelledEmailDE      String

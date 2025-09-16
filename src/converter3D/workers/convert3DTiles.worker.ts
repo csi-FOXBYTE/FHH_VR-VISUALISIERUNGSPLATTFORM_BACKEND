@@ -15,6 +15,7 @@ const convert3DTilesWorker = createWorker()
         containerName: string;
         id: string;
         srcSRS: string;
+        appearance: string;
         localProcessorFolder: string;
         threadCount: number;
       },

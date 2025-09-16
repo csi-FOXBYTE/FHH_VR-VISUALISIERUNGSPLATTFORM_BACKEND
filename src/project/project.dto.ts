@@ -119,6 +119,7 @@ export const unityProjectDTO = Type.Object({
   id: Type.String(),
   myRole: Type.Union([Type.Literal("MODERATOR"), Type.Literal("GUEST")]),
   description: Type.String(),
+  maximumFlyingHeight: Type.Number(),
   startingPoints: Type.Array(
     Type.Object({
       id: Type.String(),

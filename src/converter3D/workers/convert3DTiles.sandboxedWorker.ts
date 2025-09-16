@@ -12,7 +12,10 @@ import glob from "tiny-glob";
 import { cityGMLToCityJSON } from "../../lib/CityGMLTools.js";
 import { injectPinoLogger } from "../../lib/pino.js";
 import { initializeContainers } from "../../registries.js";
-import { getBlobStorageService, type Converter3DConvert3DTilesWorkerJob } from "../../@internals/index.js";
+import {
+  getBlobStorageService,
+  type Converter3DConvert3DTilesWorkerJob,
+} from "../../@internals/index.js";
 
 injectPinoLogger();
 
@@ -71,10 +74,10 @@ export default async function run(
     const { dbFilePath } = await generateTileDatabaseFromCityJSON(
       unpackedPath,
       rootPath,
-      "rgbTexture",
+      job.data.appearance,
       async (progress) =>
         await throttledProgress((0.15 + progress * 0.3) * 100),
-      { threadCount: job.data.threadCount }
+      { threadCount: job.data.threadCount, srcSRS: job.data.srcSRS }
     );
     job.log("Generated tile database.");
 

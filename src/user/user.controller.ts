@@ -1,9 +1,7 @@
 import { createController } from "@csi-foxbyte/fastify-toab";
 import { authMiddleware } from "../auth/auth.middleware.js";
 import { Type } from "@sinclair/typebox";
-import {
-  getUserService,
-} from "../@internals/index.js";
+import { getUserService } from "../@internals/index.js";
 
 const userController = createController().use(authMiddleware).rootPath("/user");
 
@@ -28,6 +26,18 @@ userController
     const userService = await getUserService(services);
 
     await userService.remove(ctx.session.user.id);
+
+    return true;
+  });
+
+userController
+  .addRoute("DELETE", "/:id")
+  .output(Type.Boolean())
+  .params(Type.Object({ id: Type.String() }))
+  .handler(async ({ params, services }) => {
+    const userService = await getUserService(services);
+
+    await userService.remove(params.id);
 
     return true;
   });

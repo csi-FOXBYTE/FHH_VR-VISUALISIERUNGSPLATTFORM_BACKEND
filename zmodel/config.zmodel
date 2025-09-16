@@ -10,21 +10,30 @@ model Configuration extends Base, AdminPrivilege {
     maxParallelFileConversions      Float
     maxParallelBaseLayerConversions Float
 
-    invitationEmailText             String @db.Text
+    invitationEmailText             String  @db.Text
 
     localProcessorFolder            String
 
-    invitationEmailDE String
-    invitationEmailEN String
-    
-    invitationCancelledEmailDE String
-    invitationCancelledEmailEN String
+    emailUser                       String
+    emailPassword                   String
+    emailHost                       String
+    emailPort                       Int
+    emailSecure                     Boolean
+    emailPlatformAddress            String
 
-    invitationUpdatedEmailDE String
-    invitationUpdatedEmailEN String
+    maximumFlyingHeight             Float
 
-    predeletionEmailDE String
-    predeletionEmailEN String
+    invitationEmailDE               String
+    invitationEmailEN               String
+
+    invitationCancelledEmailDE      String
+    invitationCancelledEmailEN      String
+
+    invitationUpdatedEmailDE        String
+    invitationUpdatedEmailEN        String
+
+    predeletionEmailDE              String
+    predeletionEmailEN              String
 
     @@allow('all', true)
 }

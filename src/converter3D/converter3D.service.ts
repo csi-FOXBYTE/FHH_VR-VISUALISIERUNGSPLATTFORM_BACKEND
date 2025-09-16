@@ -123,7 +123,7 @@ const converter3DService = createService(
         const job = await terrainConverterQueue.add(id, {
           blobName,
           id,
-          threadCount: 10, // TODO: make that configurable
+          threadCount: 4,
           srcSRS,
           containerName,
           localProcessorFolder: (
@@ -148,7 +148,7 @@ const converter3DService = createService(
     };
 
     const tile3D = {
-      async convert3DTile(token: string, name: string, srcSRS: string) {
+      async convert3DTile(token: string, name: string, srcSRS: string, appearance: string) {
         const authService = await getAuthService(services);
 
         const { blobName, containerName } =
@@ -172,8 +172,9 @@ const converter3DService = createService(
         const job = await tile3DConverterQueue.add(id, {
           blobName,
           srcSRS,
-          threadCount: 10, // TODO: make that configurable
+          threadCount: 4,
           id,
+          appearance,
           containerName,
           localProcessorFolder: (
             await configurationService.getConfiguration()

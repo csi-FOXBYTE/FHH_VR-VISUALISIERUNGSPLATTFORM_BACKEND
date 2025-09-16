@@ -171,7 +171,7 @@ const eventsService = createService(
               start: startTime,
               end: endTime,
               title: title,
-              url: "https://fhhvr.foxbyte.de", // TODO make this unstatic
+              url: config.emailPlatformAddress,
               htmlContent: html,
               organizer: {
                 email: createdEvent.owner?.email,
@@ -294,7 +294,7 @@ const eventsService = createService(
               start: cancelledEvent.startTime.toISOString(),
               end: cancelledEvent.endTime.toISOString(),
               title: cancelledEvent.title,
-              url: "https://fhhvr.foxbyte.de", // TODO make this unstatic
+              url: config.emailPlatformAddress,
               htmlContent: html,
               organizer: {
                 email: cancelledEvent.owner?.email,
@@ -375,6 +375,10 @@ const eventsService = createService(
           },
         });
 
+        const cleanedAttendees = Array.from(
+          new Set((attendees ?? []).concat(moderators ?? []))
+        );
+
         const updatedEvent = await prismaService.event.update({
           where: {
             id,
@@ -419,14 +423,10 @@ const eventsService = createService(
                 : { connect: { id: project } },
             attendees: attendees
               ? {
-                  set: Array.from(
-                    new Set(attendees.concat(moderators ?? []))
-                  ).map((userId) => ({
-                    eventId_userId: { eventId: id, userId },
-                  })),
-                  upsert: Array.from(
-                    new Set(attendees.concat(moderators ?? []))
-                  ).map((userId) => ({
+                  deleteMany: {
+                    NOT: { userId: { in: cleanedAttendees } },
+                  },
+                  upsert: cleanedAttendees.map((userId) => ({
                     where: { eventId_userId: { eventId: id, userId } },
                     create: {
                       userId,
@@ -484,7 +484,7 @@ const eventsService = createService(
               start: updatedEvent.startTime.toISOString(),
               end: updatedEvent.endTime.toISOString(),
               title: title,
-              url: "https://fhhvr.foxbyte.de", // TODO make this unstatic
+              url: config.emailPlatformAddress,
               htmlContent: html,
               organizer: {
                 email: updatedEvent.owner?.email,

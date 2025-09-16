@@ -16,6 +16,7 @@ export type ConvertTerrainResponseDTO = Static<
 
 export const convert3DTileRequestDTO = Type.Object({
   srcSRS: Type.String(),
+  appearance: Type.String(),
   name: Type.String(),
   token: Type.String(),
 });

@@ -13,7 +13,10 @@ import {
 import { authMiddleware } from "../auth/auth.middleware.js";
 import { Type } from "@sinclair/typebox";
 import proj4list from "proj4-list";
-import { getBlobStorageService, getConverter3DService } from "../@internals/index.js";
+import {
+  getBlobStorageService,
+  getConverter3DService,
+} from "../@internals/index.js";
 
 const converter3DController = createController()
   .use(authMiddleware)
@@ -90,7 +93,8 @@ converter3DController
     return await converter3DService.convert3DTile(
       body.token,
       body.name,
-      body.srcSRS
+      body.srcSRS,
+      body.appearance
     );
   });
 
