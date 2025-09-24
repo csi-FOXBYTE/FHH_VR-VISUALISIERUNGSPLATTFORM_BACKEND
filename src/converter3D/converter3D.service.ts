@@ -224,6 +224,9 @@ const converter3DService = createService(
         });
       },
     };
+  },
+  {
+    scope: "REQUEST",
   }
 );
 
