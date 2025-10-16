@@ -51,6 +51,7 @@ const baseLayerService = createService(
           name: baseLayer.name,
           description: baseLayer.description,
           id: baseLayer.id,
+          type: baseLayer.type,
           href: baseLayer.containerName
             ? createBaseLayerHref({
                 containerName: baseLayer.containerName,
@@ -83,6 +84,7 @@ const baseLayerService = createService(
           name: baseLayer.name,
           description: baseLayer.description,
           id: baseLayer.id,
+          type: baseLayer.type,
           href: baseLayer.containerName
             ? createBaseLayerHref({
                 containerName: baseLayer.containerName,
@@ -113,7 +115,8 @@ const baseLayerService = createService(
       async update(
         id: string,
         href: string | null,
-        visibleForGroups: string[]
+        visibleForGroups: string[],
+        isPublic: boolean
       ) {
         const session = await authService.getSession();
 
@@ -125,6 +128,7 @@ const baseLayerService = createService(
           },
           data: {
             href,
+            isPublic,
             visibleForGroups: {
               set: visibleForGroups.map((v) => ({ id: v })),
             },

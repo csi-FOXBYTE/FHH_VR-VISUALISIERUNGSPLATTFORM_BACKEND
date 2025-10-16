@@ -279,6 +279,7 @@ model BaseLayer {
   href                    String?
   /// Containername is only used when its stored in azure.
   containerName           String?
+  isPublic                Boolean                      @default(false)
   includedInProjectLayers ProjectLayer[]
 }
 

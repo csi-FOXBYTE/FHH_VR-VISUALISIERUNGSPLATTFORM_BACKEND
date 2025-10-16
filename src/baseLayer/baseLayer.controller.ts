@@ -43,12 +43,13 @@ baseLayerController
       href: Type.Union([Type.String(), Type.Null()]),
       visibleForGroups: Type.Array(Type.String()),
       id: Type.String(),
+      isPublic: Type.Boolean(),
     })
   )
   .handler(async ({ body, services }) => {
     const baseLayerService = await getBaseLayerService(services);
 
-    await baseLayerService.update(body.id, body.href, body.visibleForGroups);
+    await baseLayerService.update(body.id, body.href, body.visibleForGroups, body.isPublic);
   });
 
 baseLayerController
@@ -67,6 +68,7 @@ baseLayerController
         id: Type.String(),
         name: Type.String(),
         href: Type.String(),
+        type: Type.String(),
         description: Type.String(),
       })
     )
@@ -85,6 +87,7 @@ baseLayerController
         id: Type.String(),
         name: Type.String(),
         href: Type.String(),
+        type: Type.String(),
         description: Type.String(),
       })
     )

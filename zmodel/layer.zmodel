@@ -37,6 +37,8 @@ model BaseLayer extends Layer, Base, Ownable, AdminPrivilege {
   /// Containername is only used when its stored in azure.
   containerName           String?
 
+  isPublic                Boolean                      @default(false)
+
   includedInProjectLayers ProjectLayer[]
   /// Visible for event attendees
   @@allow('read', includedInProjectLayers?[project.events?[attendees?[userId == auth().id]]])
