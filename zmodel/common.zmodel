@@ -24,9 +24,20 @@ abstract model DirectedPoint extends Base {
   startPointX Float
   startPointY Float
   startPointZ Float
+  uiStartPointX String
+  uiStartPointY String
+  uiStartPointZ String
+
+  uiStartPointEpsg String
+
   endPointX   Float
   endPointY   Float
   endPointZ   Float
+  uiEndPointX String
+  uiEndPointY String
+  uiEndPointZ String
+
+  uiEndPointEpsg String
 }
 
 enum LANGUAGES {

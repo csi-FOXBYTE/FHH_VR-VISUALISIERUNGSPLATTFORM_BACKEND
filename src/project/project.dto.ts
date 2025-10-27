@@ -41,11 +41,23 @@ export const projectDTO = Type.Object({
         y: Type.Number(),
         z: Type.Number(),
       }),
+      uiStartPoint: Type.Object({
+        x: Type.String(),
+        y: Type.String(),
+        z: Type.String(),
+      }),
+      uiStartPointEpsg: Type.String(),
       endPoint: Type.Object({
         x: Type.Number({}),
         y: Type.Number(),
         z: Type.Number(),
       }),
+      uiEndPoint: Type.Object({
+        x: Type.String(),
+        y: Type.String(),
+        z: Type.String(),
+      }),
+      uiEndPointEpsg: Type.String(),
     })
   ),
   layers: Type.Array(
@@ -80,16 +92,32 @@ export const projectDTO = Type.Object({
             z: Type.Number(),
             w: Type.Number(),
           }),
+          uiRotation: Type.Object({
+            x: Type.String(),
+            y: Type.String(),
+            z: Type.String(),
+          }),
           scale: Type.Object({
             x: Type.Number(),
             y: Type.Number(),
             z: Type.Number(),
+          }),
+          uiScale: Type.Object({
+            x: Type.String(),
+            y: Type.String(),
+            z: Type.String(),
           }),
           translation: Type.Object({
             x: Type.Number(),
             y: Type.Number(),
             z: Type.Number(),
           }),
+          uiTranslation: Type.Object({
+            x: Type.String(),
+            y: Type.String(),
+            z: Type.String(),
+          }),
+          uiEpsg: Type.String(),
         })
       ),
     })

@@ -24,9 +24,6 @@ const configurationService = createService(
       },
     };
   },
-  {
-    buildTime: "INSTANT",
-  }
 );
 
 export default configurationService;

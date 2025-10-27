@@ -22,6 +22,7 @@ const convertTerrainWorker = createWorker()
     >
   >()
   .on("active", async ({ services }, job) => {
+    console.log({services});
     try {
       const converter3DService = await getConverter3DService(services);
 
@@ -31,6 +32,7 @@ const convertTerrainWorker = createWorker()
     }
   })
   .on("progress", async ({ services }, job) => {
+    console.log({services});
     try {
       const converter3DService = await getConverter3DService(services);
 
@@ -59,6 +61,8 @@ const convertTerrainWorker = createWorker()
   .on("failed", async ({ services }, job) => {
     try {
       if (!job) return;
+
+      console.log({services});
 
       const converter3DService = await getConverter3DService(services);
 

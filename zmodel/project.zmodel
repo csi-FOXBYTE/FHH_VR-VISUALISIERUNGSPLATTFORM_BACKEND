@@ -71,6 +71,20 @@ model ProjectModel extends Base, AdminPrivilege {
     translationY   Float
     translationZ   Float
 
+    uiRotationEulerX String @db.Text
+    uiRotationEulerY String @db.Text
+    uiRotationEulerZ String @db.Text
+
+    uiScaleX String @db.Text
+    uiScaleY String @db.Text
+    uiScaleZ String @db.Text
+
+    uiTranslationX String @db.Text
+    uiTranslationY String @db.Text
+    uiTranslationZ String @db.Text
+
+    uiEpsg String @db.Text
+
     /// Visible for event attendees
     @@allow('read', projectLayer.project.events?[attendees?[userId == auth().id]])
 

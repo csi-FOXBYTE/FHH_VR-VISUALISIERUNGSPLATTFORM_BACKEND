@@ -157,60 +157,86 @@ model ClippingPolygon {
 }
 
 model ProjectModel {
-  id             String       @id() @default(cuid())
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt()
-  name           String
-  href           String
+  id               String       @id() @default(cuid())
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt()
+  name             String
+  href             String
   /// JSON object of all assigned meta data
-  attributes     String       @db.Text()
-  projectLayer   ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  projectLayerId String
-  rotationX      Float
-  rotationY      Float
-  rotationZ      Float
-  rotationW      Float
-  scaleX         Float
-  scaleY         Float
-  scaleZ         Float
-  translationX   Float
-  translationY   Float
-  translationZ   Float
+  attributes       String       @db.Text()
+  projectLayer     ProjectLayer @relation(fields: [projectLayerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  projectLayerId   String
+  rotationX        Float
+  rotationY        Float
+  rotationZ        Float
+  rotationW        Float
+  scaleX           Float
+  scaleY           Float
+  scaleZ           Float
+  translationX     Float
+  translationY     Float
+  translationZ     Float
+  uiRotationEulerX String       @db.Text()
+  uiRotationEulerY String       @db.Text()
+  uiRotationEulerZ String       @db.Text()
+  uiScaleX         String       @db.Text()
+  uiScaleY         String       @db.Text()
+  uiScaleZ         String       @db.Text()
+  uiTranslationX   String       @db.Text()
+  uiTranslationY   String       @db.Text()
+  uiTranslationZ   String       @db.Text()
+  uiEpsg           String       @db.Text()
 }
 
 /// Is global per definition, can not be associatd to a project.
 model VisualAxis {
-  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId     String?
-  id          String   @id() @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt()
-  name        String
-  description String   @default("")
-  startPointX Float
-  startPointY Float
-  startPointZ Float
-  endPointX   Float
-  endPointY   Float
-  endPointZ   Float
+  owner            User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  ownerId          String?
+  id               String   @id() @default(cuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt()
+  name             String
+  description      String   @default("")
+  startPointX      Float
+  startPointY      Float
+  startPointZ      Float
+  uiStartPointX    String
+  uiStartPointY    String
+  uiStartPointZ    String
+  uiStartPointEpsg String
+  endPointX        Float
+  endPointY        Float
+  endPointZ        Float
+  uiEndPointX      String
+  uiEndPointY      String
+  uiEndPointZ      String
+  uiEndPointEpsg   String
 }
 
 /// Can be global or local depending on if a project is defined.
 model StartingPoint {
-  id          String   @id() @default(cuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt()
-  name        String
-  description String   @default("")
-  startPointX Float
-  startPointY Float
-  startPointZ Float
-  endPointX   Float
-  endPointY   Float
-  endPointZ   Float
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  projectId   String?
-  img         String   @db.Text()
+  id               String   @id() @default(cuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt()
+  name             String
+  description      String   @default("")
+  startPointX      Float
+  startPointY      Float
+  startPointZ      Float
+  uiStartPointX    String
+  uiStartPointY    String
+  uiStartPointZ    String
+  uiStartPointEpsg String
+  endPointX        Float
+  endPointY        Float
+  endPointZ        Float
+  uiEndPointX      String
+  uiEndPointY      String
+  uiEndPointZ      String
+  uiEndPointEpsg   String
+  project          Project? @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  projectId        String?
+  img              String   @db.Text()
 }
 
 model ProjectLayer {
@@ -318,6 +344,10 @@ model Configuration {
   globalStartPointX               Float
   globalStartPointY               Float
   globalStartPointZ               Float
+  uiGlobalStartPointX             String
+  uiGlobalStartPointY             String
+  uiGlobalStartPointZ             String
+  uiGlobalStartPointEpsg          String
   maxParallelFileConversions      Float
   maxParallelBaseLayerConversions Float
   invitationEmailText             String   @db.Text()

@@ -89,23 +89,25 @@ export default async function run(
     }
 
     try {
+      return;
       await blobStorageService.delete(
         job.data.containerName,
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
     job.log("Finished.");
     job.updateProgress(100);
   } catch (e) {
     job.log(e);
     try {
+      return;
       await blobStorageService.delete(
         job.data.containerName,
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
     throw e;
   }
 }

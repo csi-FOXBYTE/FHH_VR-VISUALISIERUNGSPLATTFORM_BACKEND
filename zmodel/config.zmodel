@@ -7,6 +7,11 @@ model Configuration extends Base, AdminPrivilege {
     globalStartPointY               Float
     globalStartPointZ               Float
 
+    uiGlobalStartPointX String
+    uiGlobalStartPointY String
+    uiGlobalStartPointZ String
+    uiGlobalStartPointEpsg String
+
     maxParallelFileConversions      Float
     maxParallelBaseLayerConversions Float
 

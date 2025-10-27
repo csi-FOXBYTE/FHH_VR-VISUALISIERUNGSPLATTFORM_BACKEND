@@ -11,7 +11,7 @@ import Fastify from "fastify";
 import json from "../package.json" with { type: "json" };
 import { injectPinoLogger, loggerOptions } from "./lib/pino.js";
 import { createBullBoard } from '@bull-board/api';
-import {BullMQAdapter} from "@bull-board/api/bullMQAdapter.js";
+import {BullMQAdapter} from "@bull-board/api/bullMQAdapter";
 import { FastifyAdapter } from '@bull-board/fastify';
 import fastifyRateLimit from "@fastify/rate-limit"
 import {FastifyOtelInstrumentation} from "@fastify/otel";

@@ -39,7 +39,7 @@ export default async function run(
 
     try {
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
 
     await mkdir(rootPath, { recursive: true });
 
@@ -88,8 +88,9 @@ export default async function run(
     await generate3DTilesFromTileDatabase(
       dbFilePath,
       tilesPath,
+      job.data.hasAlphaEnabled,
       async (progress) => {
-        await throttledProgress((0.45 + progress * 0.3) * 100);
+        await throttledProgress((0.45 + progress * 0.3) * 100)
       },
       {
         threadCount: job.data.threadCount,
@@ -127,7 +128,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
   } catch (e) {
     job.log(JSON.stringify(e));
     try {
@@ -136,7 +137,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
     throw e;
   }
 }
