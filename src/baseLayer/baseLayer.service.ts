@@ -41,7 +41,7 @@ const baseLayerService = createService(
         if (!baseLayer.containerName) return;
         try {
           await blobStorageService.deleteContainer(baseLayer.containerName);
-        } catch {}
+        } catch { }
       },
       createBaseLayerHref,
       async list() {
@@ -54,9 +54,9 @@ const baseLayerService = createService(
           type: baseLayer.type,
           href: baseLayer.containerName
             ? createBaseLayerHref({
-                containerName: baseLayer.containerName,
-                type: baseLayer.type,
-              })
+              containerName: baseLayer.containerName,
+              type: baseLayer.type,
+            })
             : baseLayer.href!,
         }));
       },
@@ -87,9 +87,9 @@ const baseLayerService = createService(
           type: baseLayer.type,
           href: baseLayer.containerName
             ? createBaseLayerHref({
-                containerName: baseLayer.containerName,
-                type: baseLayer.type,
-              })
+              containerName: baseLayer.containerName,
+              type: baseLayer.type,
+            })
             : baseLayer.href!,
         }));
       },

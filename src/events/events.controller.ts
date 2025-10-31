@@ -15,17 +15,15 @@ const eventsController = createController()
   .rootPath("/events");
 
 eventsController
-  .addRoute("SSE", "/")
+  .addRoute("GET", "/")
   .output(
     Type.Array(
       Type.Object({
-        id: Type.String(),
-        joinCode: Type.Optional(Type.String()),
-        status: Type.String(),
+        id: Type.String({ description: "Event id." }),
+        status: Type.String({ description: `Can be one of ${Object.keys($Enums.EVENT_STATUS).join(", ")}.` }),
         endTime: Type.String(),
         startTime: Type.String(),
         title: Type.String(),
-        projectId: Type.Optional(Type.String()),
         owner: Type.Object({
           name: Type.String(),
           email: Type.String(),
@@ -34,52 +32,21 @@ eventsController
       })
     )
   )
-  .handler(async function* ({ services, signal }) {
+  .handler(async ({ services }) => {
     const eventsService = await getEventsService(services);
 
-    const dbService = await getDbService(services);
+    const events = await eventsService.list();
 
-    async function getEventList() {
-      const events = await dbService.event.findMany({
-        select: {
-          id: true,
-          joinCode: true,
-          startTime: true,
-          endTime: true,
-          title: true,
-          status: true,
-          projectId: true,
-          owner: {
-            select: {
-              name: true,
-              id: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      return events.map((event) => ({
-        ...event,
-        endTime: event.endTime.toISOString(),
-        startTime: event.startTime.toISOString(),
-        projectId: event.projectId ?? undefined,
-        joinCode: event.joinCode ?? undefined,
-        owner: {
-          name: event.owner?.name ?? "-",
-          email: event.owner?.email ?? "-",
-          id: event.owner?.id ?? "-",
-        },
-      }));
-    }
-
-    const events = eventsService.list();
-
-    yield await getEventList();
-
-    for await (const _ of on(events, "change", { signal })) {
-      yield await getEventList();
-    }
+    return events.map((event) => ({
+      ...event,
+      endTime: event.endTime.toISOString(),
+      startTime: event.startTime.toISOString(),
+      owner: {
+        name: event.owner?.name ?? "-",
+        email: event.owner?.email ?? "-",
+        id: event.owner?.id ?? "-",
+      },
+    }));
   });
 
 eventsController
@@ -115,12 +82,13 @@ eventsController
   .output(
     Type.Object({
       id: Type.String(),
-      joinCode: Type.Optional(Type.String()),
+      joinCode: Type.Union([Type.Null(), Type.String()]),
       status: Type.Enum($Enums.EVENT_STATUS),
       endTime: Type.String(),
       startTime: Type.String(),
       title: Type.String(),
-      projectId: Type.Optional(Type.String()),
+      role: Type.String({ description: `Can be one of ${Object.keys($Enums.EVENT_ATTENDEE_ROLES)}.` }),
+      projectId: Type.Union([Type.Null(), Type.String()]),
       owner: Type.Object({
         name: Type.String(),
         email: Type.String(),
@@ -128,7 +96,7 @@ eventsController
       }),
     })
   )
-  .handler(async function* ({ services, signal, params }) {
+  .handler(async function* ({ services, signal, params, ctx }) {
     const eventsService = await getEventsService(services);
 
     const events = eventsService.status(params.id);
@@ -147,6 +115,14 @@ eventsController
           endTime: true,
           title: true,
           status: true,
+          attendees: {
+            where: {
+              userId: ctx.session.user.id
+            },
+            select: {
+              role: true,
+            }
+          },
           projectId: true,
           owner: {
             select: {
@@ -159,11 +135,14 @@ eventsController
       });
 
       return {
-        ...event,
+        id: event.id,
+        status: event.status,
+        title: event.title,
         endTime: event.endTime.toISOString(),
         startTime: event.startTime.toISOString(),
-        projectId: event.projectId ?? undefined,
-        joinCode: event.joinCode ?? undefined,
+        projectId: event.projectId,
+        joinCode: event.joinCode,
+        role: event.attendees[0]?.role ?? "MODERATOR",
         owner: {
           name: event.owner?.name ?? "-",
           email: event.owner?.email ?? "-",

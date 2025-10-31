@@ -14,7 +14,7 @@ import Handlebars from "handlebars";
 const eventsService = createService(
   "events",
   async ({ services }) => {
-    const HEARTBEAT_DELAY_MS = 15_000;
+    const HEARTBEAT_DELAY_MS = 25_000;
     const HEARTBEAT_CHECK_MS = 20_000;
 
     const dbService = await getDbService(services);
@@ -68,6 +68,8 @@ const eventsService = createService(
         },
         data: {
           status: "MISSING_HOST",
+          joinCode: null,
+          heartbeatTimestamp: null,
         },
       });
     }
@@ -423,28 +425,28 @@ const eventsService = createService(
               project === undefined
                 ? undefined
                 : project === null
-                ? { disconnect: {} }
-                : { connect: { id: project } },
+                  ? { disconnect: {} }
+                  : { connect: { id: project } },
             attendees: attendees
               ? {
-                  deleteMany: {
-                    NOT: { userId: { in: cleanedAttendees } },
+                deleteMany: {
+                  NOT: { userId: { in: cleanedAttendees } },
+                },
+                upsert: cleanedAttendees.map((userId) => ({
+                  where: { eventId_userId: { eventId: id, userId } },
+                  create: {
+                    userId,
+                    role: (moderators ?? []).includes(userId)
+                      ? "MODERATOR"
+                      : "GUEST",
                   },
-                  upsert: cleanedAttendees.map((userId) => ({
-                    where: { eventId_userId: { eventId: id, userId } },
-                    create: {
-                      userId,
-                      role: (moderators ?? []).includes(userId)
-                        ? "MODERATOR"
-                        : "GUEST",
-                    },
-                    update: {
-                      role: (moderators ?? []).includes(userId)
-                        ? "MODERATOR"
-                        : "GUEST",
-                    },
-                  })),
-                }
+                  update: {
+                    role: (moderators ?? []).includes(userId)
+                      ? "MODERATOR"
+                      : "GUEST",
+                  },
+                })),
+              }
               : undefined,
           },
         });
@@ -549,8 +551,23 @@ const eventsService = createService(
 
       fetchStatus,
 
-      list() {
-        return prismaService.event.subscribe();
+      async list() {
+        return await dbService.event.findMany({
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            title: true,
+            status: true,
+            owner: {
+              select: {
+                name: true,
+                id: true,
+                email: true,
+              },
+            },
+          },
+        })
       },
 
       status(id: string) {
