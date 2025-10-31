@@ -14,7 +14,7 @@ import {
 const eventsService = createService(
   "events",
   async ({ services }) => {
-    const HEARTBEAT_DELAY_MS = 15_000;
+    const HEARTBEAT_DELAY_MS = 25_000;
     const HEARTBEAT_CHECK_MS = 20_000;
 
     const dbService = await getDbService(services);
@@ -68,6 +68,8 @@ const eventsService = createService(
         },
         data: {
           status: "MISSING_HOST",
+          joinCode: null,
+          heartbeatTimestamp: null,
         },
       });
     }
@@ -557,8 +559,23 @@ const eventsService = createService(
 
       fetchStatus,
 
-      list() {
-        return prismaService.event.subscribe();
+      async list() {
+        return await dbService.event.findMany({
+          select: {
+            id: true,
+            startTime: true,
+            endTime: true,
+            title: true,
+            status: true,
+            owner: {
+              select: {
+                name: true,
+                id: true,
+                email: true,
+              },
+            },
+          },
+        })
       },
 
       status(id: string) {

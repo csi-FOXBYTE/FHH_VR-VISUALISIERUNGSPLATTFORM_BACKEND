@@ -47,7 +47,7 @@ export default async function run(
 
       await job.updateProgress(0.25);
 
-      const extension = job.data.fileName.split(".").slice(-1)[0];
+      const extension = String(job.data.fileName.split(".").slice(-1)[0]).toLowerCase();
 
       const io = new NodeIO()
         .registerExtensions([...ALL_EXTENSIONS])
@@ -105,7 +105,6 @@ export default async function run(
           simplifier: MeshoptSimplifier,
           ratio: 0.0,
           error: 0.001,
-          cleanup: true,
           lockBorder: false,
         }),
         draco({}),
