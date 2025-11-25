@@ -16,8 +16,13 @@ import {
   getBlobStorageService,
   type Converter3DConvert3DTilesWorkerJob,
 } from "../../@internals/index.js";
+import dayjs from "dayjs";
 
 injectPinoLogger();
+
+function printLogWithDate(log: string) {
+  return `${dayjs().format("HH:mm DD.MM.YYYY")}: ${log}`;
+}
 
 export default async function run(
   job: Converter3DConvert3DTilesWorkerJob
@@ -26,12 +31,14 @@ export default async function run(
 
   const blobStorageService = await getBlobStorageService(services);
 
-  job.log("Initialized worker.");
+  job.log(printLogWithDate("Initialized worker."));
   const rootPath = path.join(job.data.localProcessorFolder, job.data.id);
+
+  job.log(printLogWithDate("Working in: " + rootPath));
 
   const throttledProgress = _.throttle(async (progress: number) => {
     await job.updateProgress(progress);
-    job.log(JSON.stringify(progress));
+    job.log(printLogWithDate(JSON.stringify(progress)));
   }, 5_000);
 
   try {
@@ -39,38 +46,39 @@ export default async function run(
 
     try {
       await rm(rootPath, { force: true, recursive: true });
-    } catch { }
+    } catch {}
 
     await mkdir(rootPath, { recursive: true });
 
-    job.log("Downloading zip file...");
+    job.log(printLogWithDate("Downloading zip file..."));
     await blobStorageService.downloadToFile(
       job.data.containerName,
       job.data.blobName,
       zipPath
     );
-    job.log("Downloaded zip file.");
+    job.log(printLogWithDate("Downloaded zip file."));
 
     await throttledProgress(0.05 * 100);
 
     // unpack files
-    job.log("Unpacking files...");
+    job.log(printLogWithDate("Unpacking files..."));
     const unpackedPath = path.join(rootPath, "unpacked");
-    job.log("Unpacked files.");
 
     await seven.unpack(zipPath, unpackedPath);
+
+    job.log(printLogWithDate("Unpacked files."));
 
     await throttledProgress(0.1 * 100);
 
     // preprocess with citygml tools
-    job.log("Preprocessing with citygml-tools...");
+    job.log(printLogWithDate("Preprocessing with citygml-tools..."));
     await cityGMLToCityJSON(unpackedPath);
-    job.log("Preprocessed with citygml-tools.");
+    job.log(printLogWithDate("Preprocessed with citygml-tools."));
 
     await throttledProgress(0.15 * 100);
 
     // generate tile db
-    job.log("Generating tile database...");
+    job.log(printLogWithDate("Generating tile database..."));
     const { dbFilePath } = await generateTileDatabaseFromCityJSON(
       unpackedPath,
       rootPath,
@@ -79,24 +87,24 @@ export default async function run(
         await throttledProgress((0.15 + progress * 0.3) * 100),
       { threadCount: job.data.threadCount, srcSRS: job.data.srcSRS }
     );
-    job.log("Generated tile database.");
+    job.log(printLogWithDate("Generated tile database."));
 
     const tilesPath = path.join(rootPath, "tiles");
 
     // generate 3d tiles from tile db
-    job.log("Generating 3d tiles from database...");
+    job.log(printLogWithDate("Generating 3d tiles from database..."));
     await generate3DTilesFromTileDatabase(
       dbFilePath,
       tilesPath,
       job.data.hasAlphaEnabled,
       async (progress) => {
-        await throttledProgress((0.45 + progress * 0.3) * 100)
+        await throttledProgress((0.45 + progress * 0.3) * 100);
       },
       {
         threadCount: job.data.threadCount,
       }
     );
-    job.log("Generated 3d tiles from database.");
+    job.log(printLogWithDate("Generated 3d tiles from database."));
 
     const files = await glob("./*", {
       filesOnly: true,
@@ -128,7 +136,8 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch { }
+      await rm(dbFilePath, { force: true, recursive: true });
+    } catch {}
   } catch (e) {
     job.log(JSON.stringify(e));
     try {
@@ -137,7 +146,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch { }
+    } catch {}
     throw e;
   }
 }

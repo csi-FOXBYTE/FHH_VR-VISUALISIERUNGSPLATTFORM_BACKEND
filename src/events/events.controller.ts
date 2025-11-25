@@ -20,16 +20,27 @@ eventsController
     Type.Array(
       Type.Object({
         id: Type.String({ description: "Event id." }),
-        status: Type.String({ description: `Can be one of ${Object.keys($Enums.EVENT_STATUS).join(", ")}.` }),
+        status: Type.String({
+          description: `Can be one of ${Object.keys($Enums.EVENT_STATUS).join(
+            ", "
+          )}.`,
+        }),
         endTime: Type.String(),
         startTime: Type.String(),
         projectId: Type.Union([Type.String(), Type.Null()]),
         title: Type.String(),
         owner: Type.Object({
-          name: Type.String(),
+          name: Type.Union([Type.String(), Type.Null()]),
           email: Type.String(),
           id: Type.String(),
         }),
+        moderators: Type.Array(
+          Type.Object({
+            name: Type.Union([Type.String(), Type.Null()]),
+            email: Type.String(),
+            id: Type.String(),
+          })
+        ),
       })
     )
   )
@@ -42,6 +53,7 @@ eventsController
       ...event,
       endTime: event.endTime.toISOString(),
       startTime: event.startTime.toISOString(),
+      moderators: event.attendees.map((u) => u.user),
       owner: {
         name: event.owner?.name ?? "-",
         email: event.owner?.email ?? "-",
@@ -88,7 +100,11 @@ eventsController
       endTime: Type.String(),
       startTime: Type.String(),
       title: Type.String(),
-      role: Type.String({ description: `Can be one of ${Object.keys($Enums.EVENT_ATTENDEE_ROLES)}.` }),
+      role: Type.String({
+        description: `Can be one of ${Object.keys(
+          $Enums.EVENT_ATTENDEE_ROLES
+        )}.`,
+      }),
       projectId: Type.Union([Type.Null(), Type.String()]),
       owner: Type.Object({
         name: Type.String(),
@@ -118,11 +134,11 @@ eventsController
           status: true,
           attendees: {
             where: {
-              userId: ctx.session.user.id
+              userId: ctx.session.user.id,
             },
             select: {
               role: true,
-            }
+            },
           },
           projectId: true,
           owner: {

@@ -4,6 +4,7 @@ import {
   getAuthService,
   getBlobStorageService,
   getConfigurationService,
+  getConverter3DConvert3DTilesWorker,
   getConverter3DConvert3DTilesWorkerQueue,
   getConverter3DConvertProjectModelWorkerQueue,
   getConverter3DConvertTerrainWorkerQueue,
@@ -12,7 +13,7 @@ import {
 
 const converter3DService = createService(
   "converter3D",
-  async ({ queues, services }) => {
+  async ({ queues, services, workers }) => {
     const tile3DConverterQueue =
       getConverter3DConvert3DTilesWorkerQueue(queues);
     const projectModelConverterQueue =
@@ -47,6 +48,10 @@ const converter3DService = createService(
         );
 
         return { jobId: job.id!, secret: job.data.secret };
+      },
+
+      async obliterate3DTilesQueue() {
+        await tile3DConverterQueue.obliterate({ force: true });
       },
 
       async getProjectModelStatus(jobId: string, secret: string) {
@@ -99,9 +104,12 @@ const converter3DService = createService(
     };
 
     const terrain = {
-      async convertTerrain(token: string, name: string, srcSRS: string) {
-        const authService = await getAuthService(services);
-
+      async convertTerrain(
+        token: string,
+        name: string,
+        srcSRS: string,
+        ownerId: string
+      ) {
         const { blobName, containerName } =
           await blobStorageService.verifyUploadToken(token);
 
@@ -112,7 +120,7 @@ const converter3DService = createService(
             type: "TERRAIN",
             status: "PENDING",
             progress: 0,
-            ownerId: (await authService.getSession())!.user.id,
+            ownerId,
           },
           select: {
             id: true,
@@ -122,14 +130,16 @@ const converter3DService = createService(
         await prismaService.baseLayer.update({
           where: { id },
           data: {
-            containerName: `terrain-${id}`
-          }
+            containerName: `terrain-${id}`,
+          },
         });
 
         const job = await terrainConverterQueue.add(id, {
           blobName,
           id,
-          threadCount: (await configurationService.getConfiguration()).usedTerrainConversionThreads,
+          threadCount: (
+            await configurationService.getConfiguration()
+          ).usedTerrainConversionThreads,
           srcSRS,
           containerName,
           localProcessorFolder: (
@@ -159,10 +169,9 @@ const converter3DService = createService(
         name: string,
         srcSRS: string,
         appearance: string,
-        hasAlphaEnabled: boolean
+        hasAlphaEnabled: boolean,
+        ownerId: string
       ) {
-        const authService = await getAuthService(services);
-
         const { blobName, containerName } =
           await blobStorageService.verifyUploadToken(token);
 
@@ -174,7 +183,7 @@ const converter3DService = createService(
             status: "PENDING",
             progress: 0,
             containerName: null,
-            ownerId: (await authService.getSession())!.user.id,
+            ownerId,
           },
           select: {
             id: true,
@@ -186,14 +195,16 @@ const converter3DService = createService(
             id,
           },
           data: {
-            containerName: `tileset-${id}`
-          }
+            containerName: `tileset-${id}`,
+          },
         });
 
         const job = await tile3DConverterQueue.add(id, {
           blobName,
           srcSRS,
-          threadCount: (await configurationService.getConfiguration()).used3DTileConversionThreads,
+          threadCount: (
+            await configurationService.getConfiguration()
+          ).used3DTileConversionThreads,
           id,
           hasAlphaEnabled,
           appearance,

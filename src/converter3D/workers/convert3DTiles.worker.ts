@@ -57,7 +57,8 @@ const convert3DTilesWorker = createWorker()
     concurrency: 1,
     removeOnComplete: { count: 100, age: 24 * 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
-    stalledInterval: 3_600_000, // 1 hour,
+    stalledInterval: 3_600_000, // 1 hour
+    lockDuration: 1_800_000, // 30 minutes
     telemetry: new BullMQOtel("bullmq"),
   })
   .connection(defaultConnection)

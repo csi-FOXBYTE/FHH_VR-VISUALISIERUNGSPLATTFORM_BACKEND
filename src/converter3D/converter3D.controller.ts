@@ -73,13 +73,14 @@ converter3DController
   .addRoute("POST", "/convertTerrain")
   .body(convertTerrainRequestDTO)
   .output(convertTerrainResponseDTO)
-  .handler(async ({ services, body }) => {
+  .handler(async ({ services, body, ctx }) => {
     const converter3DService = await getConverter3DService(services);
 
     return await converter3DService.convertTerrain(
       body.token,
       body.name,
-      body.srcSRS
+      body.srcSRS,
+      ctx.session.user.id
     );
   });
 
@@ -87,7 +88,7 @@ converter3DController
   .addRoute("POST", "/convert3DTile")
   .body(convert3DTileRequestDTO)
   .output(convert3DTileResponseDTO)
-  .handler(async ({ services, body }) => {
+  .handler(async ({ services, body, ctx }) => {
     const converter3DService = await getConverter3DService(services);
 
     return await converter3DService.convert3DTile(
@@ -96,6 +97,7 @@ converter3DController
       body.srcSRS,
       body.appearance,
       body.hasAlphaEnabled,
+      ctx.session.user.id
     );
   });
 

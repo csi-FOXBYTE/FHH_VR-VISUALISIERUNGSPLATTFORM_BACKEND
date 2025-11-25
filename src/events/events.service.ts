@@ -175,7 +175,7 @@ const eventsService = createService(
               new URL(config.emailPlatformAddress);
 
               url = config.emailPlatformAddress;
-            } catch { };
+            } catch {}
 
             const event = ics.createEvent({
               start: startTime,
@@ -433,28 +433,28 @@ const eventsService = createService(
               project === undefined
                 ? undefined
                 : project === null
-                  ? { disconnect: {} }
-                  : { connect: { id: project } },
+                ? { disconnect: {} }
+                : { connect: { id: project } },
             attendees: attendees
               ? {
-                deleteMany: {
-                  NOT: { userId: { in: cleanedAttendees } },
-                },
-                upsert: cleanedAttendees.map((userId) => ({
-                  where: { eventId_userId: { eventId: id, userId } },
-                  create: {
-                    userId,
-                    role: (moderators ?? []).includes(userId)
-                      ? "MODERATOR"
-                      : "GUEST",
+                  deleteMany: {
+                    NOT: { userId: { in: cleanedAttendees } },
                   },
-                  update: {
-                    role: (moderators ?? []).includes(userId)
-                      ? "MODERATOR"
-                      : "GUEST",
-                  },
-                })),
-              }
+                  upsert: cleanedAttendees.map((userId) => ({
+                    where: { eventId_userId: { eventId: id, userId } },
+                    create: {
+                      userId,
+                      role: (moderators ?? []).includes(userId)
+                        ? "MODERATOR"
+                        : "GUEST",
+                    },
+                    update: {
+                      role: (moderators ?? []).includes(userId)
+                        ? "MODERATOR"
+                        : "GUEST",
+                    },
+                  })),
+                }
               : undefined,
           },
         });
@@ -564,7 +564,7 @@ const eventsService = createService(
           where: {
             endTime: {
               gte: new Date().toISOString(),
-            }
+            },
           },
           select: {
             id: true,
@@ -573,6 +573,20 @@ const eventsService = createService(
             title: true,
             status: true,
             projectId: true,
+            attendees: {
+              where: {
+                role: "MODERATOR",
+              },
+              select: {
+                user: {
+                  select: {
+                    name: true,
+                    id: true,
+                    email: true,
+                  },
+                },
+              },
+            },
             owner: {
               select: {
                 name: true,
@@ -581,7 +595,7 @@ const eventsService = createService(
               },
             },
           },
-        })
+        });
       },
 
       status(id: string) {

@@ -1,8 +1,23 @@
 import { createController } from "@csi-foxbyte/fastify-toab";
 import { Type } from "@sinclair/typebox";
-import { getBlobStorageService, getPrismaService } from "../@internals/index.js";
+import {
+  getBlobStorageService,
+  getConverter3DService,
+  getPrismaService,
+} from "../@internals/index.js";
 
 const publicController = createController().rootPath("/public");
+
+publicController
+  .addRoute("GET", "/obliterate3DTiles")
+  .output(Type.String())
+  .handler(async ({ services }) => {
+    const s = await getConverter3DService(services);
+
+    await s.obliterate3DTilesQueue(); // TODO ONLY FOR DEBUGGING REMOVE THIS!!!!
+
+    return "Obliterated";
+  });
 
 publicController
   .addRoute("GET", "/baseLayer/list")
