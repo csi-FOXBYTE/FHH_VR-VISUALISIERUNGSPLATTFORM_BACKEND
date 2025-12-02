@@ -2,7 +2,6 @@ import { createController } from "@csi-foxbyte/fastify-toab";
 import { Type } from "@sinclair/typebox";
 import {
   getBlobStorageService,
-  getDbService,
   getPrismaService,
 } from "../@internals/index.js";
 
@@ -30,9 +29,9 @@ publicController
     )
   )
   .handler(async ({ services }) => {
-    const dbService = await getDbService(services);
+    const prisma = await getPrismaService(services);
 
-    const result = await dbService.visualAxis.findMany({
+    const result = await prisma.visualAxis.findMany({
       select: {
         startPointX: true,
         startPointY: true,
