@@ -24,8 +24,8 @@ importers:
         specifier: ^6.11.0
         version: 6.14.0
       '@csi-foxbyte/cityjson-to-3d-tiles':
-        specifier: ^0.0.17
-        version: 0.0.17(jiti@2.4.2)(yaml@2.8.1)
+        specifier: ^0.0.18
+        version: 0.0.18(jiti@2.4.2)(yaml@2.8.1)
       '@csi-foxbyte/fastify-toab':
         specifier: ^0.1.3
         version: 0.1.3(bullmq@5.61.0)
@@ -510,8 +510,8 @@ packages:
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.17':
-    resolution: {integrity: sha512-C+4cHoxEoUKyHNTKn9vQqno7PdqLBLAx4TFLUe8QDF4rt2qLUudwJWASlRbVKIHPU5sawHxr2y3VuHK7vflCtg==}
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.18':
+    resolution: {integrity: sha512-fPR0Oi4WxMBWFJjfCFeN6P2i92BLExeRcbzFQ6WF9YAM/cdHAwkpdYzbLKW5wgEtdjIAqFxSlP7ilAcY1pZbxQ==}
 
   '@csi-foxbyte/fastify-toab@0.1.3':
     resolution: {integrity: sha512-HeIPFhyKl6Cuw2KsdYGMJmrr7pLfzC24UsYLkuHwClOOyoXzt2rHCISGOtReP8rwwEtfXBBObLsBIWAwvMPXMQ==}
@@ -6013,7 +6013,7 @@ snapshots:
 
   '@colors/colors@1.6.0': {}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.17(jiti@2.4.2)(yaml@2.8.1)':
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.18(jiti@2.4.2)(yaml@2.8.1)':
     dependencies:
       3d-tiles-tools: 0.5.1
       '@gltf-transform/core': 4.2.1
