@@ -28,6 +28,15 @@ export const convert3DTileResponseDTO = Type.Object({
 });
 export type Convert3DTileResponseDTO = Static<typeof convertTerrainRequestDTO>;
 
+export const convertWMSWMTSRequestDTO = Type.Object({
+  name: Type.String(),
+  url: Type.String(),
+  layer: Type.String(),
+  startZoom: Type.Number(),
+  endZoom: Type.Number(),
+});
+export type ConvertWMSWMTSRequestDTO = Static<typeof convertWMSWMTSRequestDTO>;
+
 export const convertProjectModelRequestDTO = Type.Object({
   epsgCode: Type.String(),
   fileName: Type.String(),

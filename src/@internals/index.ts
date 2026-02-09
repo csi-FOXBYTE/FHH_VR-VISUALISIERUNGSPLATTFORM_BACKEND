@@ -18,6 +18,7 @@ import notificationService from "../notification/notification.service.js";
 import prismaService from "../prisma/prisma.service.js";
 import projectService from "../project/project.service.js";
 import statsService from "../stats/stats.service.js";
+import testService from "../test/test.service.js";
 import tokenService from "../token/token.service.js";
 import translationService from "../translation/translation.service.js";
 import userService from "../user/user.service.js";
@@ -25,6 +26,7 @@ import blobStorageDeleteBlobWorker from "../blobStorage/workers/deleteBlob.worke
 import converter3DConvert3DTilesWorker from "../converter3D/workers/convert3DTiles.worker.js";
 import converter3DConvertProjectModelWorker from "../converter3D/workers/convertProjectModel.worker.js";
 import converter3DConvertTerrainWorker from "../converter3D/workers/convertTerrain.worker.js";
+import converter3DConvertWMSWMTSWorker from "../converter3D/workers/convertWMSWMTS.worker.js";
 import converter3DUpdateConverterWorkerConfigurationsWorker from "../converter3D/workers/updateConverterWorkerConfigurations.worker.js";
 import eventsRemoveOldEventsWorker from "../events/workers/removeOldEvents.worker.js";
 import userDeleteInactiveUsersWorker from "../user/workers/deleteInactiveUsers.worker.js";
@@ -43,6 +45,7 @@ export type NotificationService = InferService<typeof notificationService>;
 export type PrismaService = InferService<typeof prismaService>;
 export type ProjectService = InferService<typeof projectService>;
 export type StatsService = InferService<typeof statsService>;
+export type TestService = InferService<typeof testService>;
 export type TokenService = InferService<typeof tokenService>;
 export type TranslationService = InferService<typeof translationService>;
 export type UserService = InferService<typeof userService>;
@@ -58,6 +61,9 @@ export type Converter3DConvertProjectModelWorkerJob = (typeof converter3DConvert
 export type Converter3DConvertTerrainWorker = (typeof converter3DConvertTerrainWorker)["worker"];
 export type Converter3DConvertTerrainWorkerQueue = (typeof converter3DConvertTerrainWorker)["queue"];
 export type Converter3DConvertTerrainWorkerJob = (typeof converter3DConvertTerrainWorker)["job"];
+export type Converter3DConvertWMSWMTSWorker = (typeof converter3DConvertWMSWMTSWorker)["worker"];
+export type Converter3DConvertWMSWMTSWorkerQueue = (typeof converter3DConvertWMSWMTSWorker)["queue"];
+export type Converter3DConvertWMSWMTSWorkerJob = (typeof converter3DConvertWMSWMTSWorker)["job"];
 export type Converter3DUpdateConverterWorkerConfigurationsWorker = (typeof converter3DUpdateConverterWorkerConfigurationsWorker)["worker"];
 export type Converter3DUpdateConverterWorkerConfigurationsWorkerQueue = (typeof converter3DUpdateConverterWorkerConfigurationsWorker)["queue"];
 export type Converter3DUpdateConverterWorkerConfigurationsWorkerJob = (typeof converter3DUpdateConverterWorkerConfigurationsWorker)["job"];
@@ -110,6 +116,9 @@ export function getProjectService(deps: ServiceContainer) {
 export function getStatsService(deps: ServiceContainer) {
     return deps.get<StatsService>(statsService.name);
 }
+export function getTestService(deps: ServiceContainer) {
+    return deps.get<TestService>(testService.name);
+}
 export function getTokenService(deps: ServiceContainer) {
     return deps.get<TokenService>(tokenService.name);
 }
@@ -142,6 +151,12 @@ export function getConverter3DConvertTerrainWorker(deps: WorkerContainer) {
 }
 export function getConverter3DConvertTerrainWorkerQueue(deps: QueueContainer) {
   return deps.get<Converter3DConvertTerrainWorkerQueue>(converter3DConvertTerrainWorker.queueName);
+}
+export function getConverter3DConvertWMSWMTSWorker(deps: WorkerContainer) {
+  return deps.get<Converter3DConvertWMSWMTSWorker>(converter3DConvertWMSWMTSWorker.queueName);
+}
+export function getConverter3DConvertWMSWMTSWorkerQueue(deps: QueueContainer) {
+  return deps.get<Converter3DConvertWMSWMTSWorkerQueue>(converter3DConvertWMSWMTSWorker.queueName);
 }
 export function getConverter3DUpdateConverterWorkerConfigurationsWorker(deps: WorkerContainer) {
   return deps.get<Converter3DUpdateConverterWorkerConfigurationsWorker>(converter3DUpdateConverterWorkerConfigurationsWorker.queueName);

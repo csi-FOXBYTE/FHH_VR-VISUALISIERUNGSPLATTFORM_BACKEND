@@ -1,6 +1,4 @@
-import {
-  createWorker,
-} from "@csi-foxbyte/fastify-toab";
+import { createWorker } from "@csi-foxbyte/fastify-toab";
 import { SandboxedJob } from "bullmq";
 import defaultConnection from "../../connection.js";
 import { BullMQOtel } from "bullmq-otel";
@@ -22,7 +20,7 @@ const convertTerrainWorker = createWorker()
     >
   >()
   .on("active", async ({ services }, job) => {
-    console.log({services});
+    console.log({ services });
     try {
       const converter3DService = await getConverter3DService(services);
 
@@ -32,14 +30,14 @@ const convertTerrainWorker = createWorker()
     }
   })
   .on("progress", async ({ services }, job) => {
-    console.log({services});
+    console.log({ services });
     try {
       const converter3DService = await getConverter3DService(services);
 
       await converter3DService.updateBaseLayerStatus(
         job.data.id,
         +job.progress.valueOf(),
-        "ACTIVE"
+        "ACTIVE",
       );
     } catch (e) {
       console.error(e);
@@ -52,7 +50,7 @@ const convertTerrainWorker = createWorker()
       await converter3DService.updateBaseLayerStatus(
         job.data.id,
         1,
-        "COMPLETED"
+        "COMPLETED",
       );
     } catch (e) {
       console.error(e);
@@ -62,14 +60,12 @@ const convertTerrainWorker = createWorker()
     try {
       if (!job) return;
 
-      console.log({services});
-
       const converter3DService = await getConverter3DService(services);
 
       await converter3DService.updateBaseLayerStatus(
         job.data.id,
         +job.progress.valueOf(),
-        "FAILED"
+        "FAILED",
       );
     } catch (e) {
       console.error(e);
@@ -80,7 +76,7 @@ const convertTerrainWorker = createWorker()
     removeOnComplete: { count: 100, age: 3600 },
     removeOnFail: { count: 200, age: 24 * 3600 },
     stalledInterval: 120_000,
-    telemetry: new BullMQOtel("bullmq")
+    telemetry: new BullMQOtel("bullmq"),
   })
   .connection(defaultConnection)
   .processor(new URL("./convertTerrain.sandboxedWorker.js", import.meta.url));

@@ -148,6 +148,7 @@ export const unityProjectDTO = Type.Object({
   projectSasQueryParameters: Type.String(),
   description: Type.String(),
   maximumFlyingHeight: Type.Number(),
+  renderDistance: Type.Number(),
   startingPoints: Type.Array(
     Type.Object({
       id: Type.String(),

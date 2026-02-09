@@ -9,6 +9,7 @@ import {
   convertTerrainResponseDTO,
   convertProjectModelRequestDTO,
   convertProjectModelResponseDTO,
+  convertWMSWMTSRequestDTO,
 } from "./converter3D.dto.js";
 import { authMiddleware } from "../auth/auth.middleware.js";
 import { Type } from "@sinclair/typebox";
@@ -36,7 +37,7 @@ converter3DController
     return await converter3DService.convertProjectModel(
       body.token,
       body.fileName,
-      body.epsgCode
+      body.epsgCode,
     );
   });
 
@@ -49,7 +50,7 @@ converter3DController
 
     return await converter3DService.getProjectModelStatus(
       body.jobId,
-      body.secret
+      body.secret,
     );
   });
 
@@ -63,7 +64,7 @@ converter3DController
     const { href } = await converter3DService.downloadProjectModel(
       body.jobId,
       body.projectId,
-      body.secret
+      body.secret,
     );
 
     return { href };
@@ -80,7 +81,7 @@ converter3DController
       body.token,
       body.name,
       body.srcSRS,
-      ctx.session.user.id
+      ctx.session.user.id,
     );
   });
 
@@ -97,7 +98,7 @@ converter3DController
       body.srcSRS,
       body.appearance,
       body.hasAlphaEnabled,
-      ctx.session.user.id
+      ctx.session.user.id,
     );
   });
 
@@ -115,7 +116,7 @@ converter3DController
   .body(
     Type.Object({
       token: Type.String(),
-    })
+    }),
   )
   .output(Type.Boolean())
   .handler(async ({ services, body }) => {
@@ -134,7 +135,7 @@ converter3DController
       total: Type.String(),
       index: Type.String(),
       token: Type.String(),
-    })
+    }),
   )
   .output(Type.Boolean())
   .handler(
@@ -164,7 +165,7 @@ converter3DController
         throw new Error("Not all parts supplied!");
 
       const blockId = Buffer.from(String(index).padStart(8, "0")).toString(
-        "base64"
+        "base64",
       );
 
       await blobStorageService.stageBlock(block, token, blockId);
@@ -174,7 +175,22 @@ converter3DController
     {
       schema: { consumes: ["multipart/form-data"] },
       validatorCompiler: () => () => ({ value: true }),
-    }
+    },
   );
+
+converter3DController
+  .addRoute("POST", "/convertWMSWMTS")
+  .body(convertWMSWMTSRequestDTO)
+  .handler(async ({ services, body }) => {
+    const converter3DService = await getConverter3DService(services);
+
+    await converter3DService.convertWMSWMTS(
+      body.name,
+      body.url,
+      body.layer,
+      body.startZoom,
+      body.endZoom,
+    );
+  });
 
 export default converter3DController;

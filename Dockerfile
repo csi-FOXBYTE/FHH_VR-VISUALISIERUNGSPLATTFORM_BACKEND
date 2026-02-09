@@ -14,9 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssl \
     sqlite3 libsqlite3-dev \
     gdal-bin libgdal-dev \
-    python3 make g++ \
+    python3 python3-pip python3-gdal \
+    make g++ \
     openjdk-17-jdk-headless \
     && rm -rf /var/lib/apt/lists/*
+
 
 ENV HOME=/home/nodeuser
 
@@ -93,6 +95,10 @@ COPY --from=build --chown=nodeuser:nodejs /app/node_modules ./node_modules
 # Copy the built application code
 COPY --from=build --chown=nodeuser:nodejs /app/.build ./.build
 COPY --from=build --chown=nodeuser:nodejs /app/package.json ./
+
+COPY requirements.txt /tmp/requirements.txt
+
+RUN pip install --no-cache-dir --break-system-packages -r /tmp/requirements.txt
 
 EXPOSE 3000
 

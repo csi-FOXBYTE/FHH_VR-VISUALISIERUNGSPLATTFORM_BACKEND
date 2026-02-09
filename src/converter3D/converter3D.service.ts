@@ -8,6 +8,7 @@ import {
   getConverter3DConvert3DTilesWorkerQueue,
   getConverter3DConvertProjectModelWorkerQueue,
   getConverter3DConvertTerrainWorkerQueue,
+  getConverter3DConvertWMSWMTSWorkerQueue,
   getPrismaService,
 } from "../@internals/index.js";
 
@@ -20,6 +21,8 @@ const converter3DService = createService(
       getConverter3DConvertProjectModelWorkerQueue(queues);
     const terrainConverterQueue =
       getConverter3DConvertTerrainWorkerQueue(queues);
+    const convertWMSWMTSWorkerQueue =
+      getConverter3DConvertWMSWMTSWorkerQueue(queues);
     const prismaService = await getPrismaService(services);
     const blobStorageService = await getBlobStorageService(services);
     const configurationService = await getConfigurationService(services);
@@ -28,7 +31,7 @@ const converter3DService = createService(
       async convertProjectModel(
         token: string,
         fileName: string,
-        srcSRS: string
+        srcSRS: string,
       ) {
         const { blobName, containerName } =
           await blobStorageService.verifyUploadToken(token);
@@ -44,7 +47,7 @@ const converter3DService = createService(
         await blobStorageService.deleteLater(
           containerName,
           blobName,
-          24 * 60 * 60 * 1000
+          24 * 60 * 60 * 1000,
         );
 
         return { jobId: job.id!, secret: job.data.secret };
@@ -80,7 +83,7 @@ const converter3DService = createService(
       async downloadProjectModel(
         jobId: string,
         projectId: string,
-        secret: string
+        secret: string,
       ) {
         const job = await projectModelConverterQueue.getJob(jobId);
 
@@ -91,12 +94,12 @@ const converter3DService = createService(
 
         const stream = await blobStorageService.downloadToStream(
           job.data.containerName,
-          collectableBlobName
+          collectableBlobName,
         );
 
         const { href } = await blobStorageService.uploadStream(
           stream.readableStreamBody as Readable,
-          `project-${projectId}`
+          `project-${projectId}`,
         );
 
         return { href };
@@ -108,7 +111,7 @@ const converter3DService = createService(
         token: string,
         name: string,
         srcSRS: string,
-        ownerId: string
+        ownerId: string,
       ) {
         const { blobName, containerName } =
           await blobStorageService.verifyUploadToken(token);
@@ -137,14 +140,12 @@ const converter3DService = createService(
         const job = await terrainConverterQueue.add(id, {
           blobName,
           id,
-          threadCount: (
-            await configurationService.getConfiguration()
-          ).usedTerrainConversionThreads,
+          threadCount: (await configurationService.getConfiguration())
+            .usedTerrainConversionThreads,
           srcSRS,
           containerName,
-          localProcessorFolder: (
-            await configurationService.getConfiguration()
-          ).localProcessorFolder,
+          localProcessorFolder: (await configurationService.getConfiguration())
+            .localProcessorFolder,
         });
 
         return { jobId: job.id! };
@@ -170,7 +171,7 @@ const converter3DService = createService(
         srcSRS: string,
         appearance: string,
         hasAlphaEnabled: boolean,
-        ownerId: string
+        ownerId: string,
       ) {
         const { blobName, containerName } =
           await blobStorageService.verifyUploadToken(token);
@@ -202,16 +203,14 @@ const converter3DService = createService(
         const job = await tile3DConverterQueue.add(id, {
           blobName,
           srcSRS,
-          threadCount: (
-            await configurationService.getConfiguration()
-          ).used3DTileConversionThreads,
+          threadCount: (await configurationService.getConfiguration())
+            .used3DTileConversionThreads,
           id,
           hasAlphaEnabled,
           appearance,
           containerName,
-          localProcessorFolder: (
-            await configurationService.getConfiguration()
-          ).localProcessorFolder,
+          localProcessorFolder: (await configurationService.getConfiguration())
+            .localProcessorFolder,
         });
 
         return { jobId: job.id! };
@@ -230,14 +229,57 @@ const converter3DService = createService(
       },
     };
 
+    const wmsWmts = {
+      async convertWMSWMTS(
+        name: string,
+        url: string,
+        layer: string,
+        startZoom: number,
+        endZoom: number,
+      ) {
+        const { id } = await prismaService.baseLayer.create({
+          data: {
+            name,
+            sizeGB: 0,
+            type: "IMAGERY",
+            status: "ACTIVE",
+            progress: 0,
+          },
+        });
+
+        const containerName = `imagery-${id}`;
+
+        await prismaService.baseLayer.update({
+          where: {
+            id,
+          },
+          data: {
+            containerName,
+          },
+        });
+
+        const job = await convertWMSWMTSWorkerQueue.add(id, {
+          url,
+          layer,
+          startZoom,
+          endZoom,
+          containerName,
+          id,
+        });
+
+        return { jobId: job.id! };
+      },
+    };
+
     return {
       ...projectModel,
       ...terrain,
       ...tile3D,
+      ...wmsWmts,
       async updateBaseLayerStatus(
         id: string,
         progress: number,
-        status: "PENDING" | "ACTIVE" | "FAILED" | "COMPLETED"
+        status: "PENDING" | "ACTIVE" | "FAILED" | "COMPLETED",
       ) {
         return await prismaService.baseLayer.update({
           where: {
@@ -250,7 +292,7 @@ const converter3DService = createService(
         });
       },
     };
-  }
+  },
 );
 
 export default converter3DService;
