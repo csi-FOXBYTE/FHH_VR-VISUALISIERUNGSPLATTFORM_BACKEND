@@ -18,7 +18,6 @@ import notificationService from "../notification/notification.service.js";
 import prismaService from "../prisma/prisma.service.js";
 import projectService from "../project/project.service.js";
 import statsService from "../stats/stats.service.js";
-import testService from "../test/test.service.js";
 import tokenService from "../token/token.service.js";
 import translationService from "../translation/translation.service.js";
 import userService from "../user/user.service.js";
@@ -45,7 +44,6 @@ export type NotificationService = InferService<typeof notificationService>;
 export type PrismaService = InferService<typeof prismaService>;
 export type ProjectService = InferService<typeof projectService>;
 export type StatsService = InferService<typeof statsService>;
-export type TestService = InferService<typeof testService>;
 export type TokenService = InferService<typeof tokenService>;
 export type TranslationService = InferService<typeof translationService>;
 export type UserService = InferService<typeof userService>;
@@ -115,9 +113,6 @@ export function getProjectService(deps: ServiceContainer) {
 }
 export function getStatsService(deps: ServiceContainer) {
     return deps.get<StatsService>(statsService.name);
-}
-export function getTestService(deps: ServiceContainer) {
-    return deps.get<TestService>(testService.name);
 }
 export function getTokenService(deps: ServiceContainer) {
     return deps.get<TokenService>(tokenService.name);

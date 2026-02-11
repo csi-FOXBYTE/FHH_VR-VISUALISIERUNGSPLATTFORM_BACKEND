@@ -21,7 +21,6 @@ import notification_notification$service from "./notification/notification.servi
 import prisma_prisma$service from "./prisma/prisma.service.js";
 import project_project$service from "./project/project.service.js";
 import stats_stats$service from "./stats/stats.service.js";
-import test_test$service from "./test/test.service.js";
 import token_token$service from "./token/token.service.js";
 import translation_translation$service from "./translation/translation.service.js";
 import user_user$service from "./user/user.service.js";
@@ -40,7 +39,6 @@ import events_events$controller from "./events/events.controller.js";
 import project_project$controller from "./project/project.controller.js";
 import public_public$controller from "./public/public.controller.js";
 import stats_stats$controller from "./stats/stats.controller.js";
-import test_test$controller from "./test/test.controller.js";
 import user_user$controller from "./user/user.controller.js";
 
 export async function getRegistries(dontInitializeWorkers?: boolean) {
@@ -63,7 +61,6 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   serviceRegistry.register(prisma_prisma$service);
   serviceRegistry.register(project_project$service);
   serviceRegistry.register(stats_stats$service);
-  serviceRegistry.register(test_test$service);
   serviceRegistry.register(token_token$service);
   serviceRegistry.register(translation_translation$service);
   serviceRegistry.register(user_user$service);
@@ -89,7 +86,6 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   controllerRegistry.register(project_project$controller);
   controllerRegistry.register(public_public$controller);
   controllerRegistry.register(stats_stats$controller);
-  controllerRegistry.register(test_test$controller);
   controllerRegistry.register(user_user$controller);
 
   return { controllerRegistry, serviceRegistry, workerRegistry };

@@ -15,6 +15,7 @@
   "customizations": {
     "vscode": {
       "extensions": [
+        "ms-python.python",
         "editorconfig.editorconfig",
         "openai.chatgpt",
         "prisma.prisma",
@@ -26,6 +27,18 @@
       ],
       "settings": {
         // ---- Global editor hygiene ----
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "search.exclude": {
+          "**/.venv": true,
+          "**/node_modules": true,
+          "**/bower_components": true,
+          "**/*.code-search": true
+        },
+        "python.analysis.exclude": [
+          "**/node_modules",
+          "**/dist",
+          "**/.venv"
+        ],
         "files.eol": "\n",
         "editor.detectIndentation": false,
         "editor.insertSpaces": true,
@@ -44,7 +57,7 @@
         "i18n-ally.sourceLanguage": "de",
         "i18n-ally.extract.autoDetect": true,
         // ---- UX niceties ----
-        "problems.showCurrentInStatus": true
+        "problems.showCurrentInStatus": true,
       }
     }
   }
