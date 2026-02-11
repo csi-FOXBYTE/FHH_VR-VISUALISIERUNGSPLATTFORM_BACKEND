@@ -1,8 +1,14 @@
-import "dotenv";
+import { queue } from "async";
+import "dotenv/config"; // Ensure config is loaded
 import _ from "lodash";
 import { spawn } from "node:child_process";
+import { readFile, rm, rmdir } from "node:fs/promises";
 import path from "node:path";
-import type { Converter3DConvertWMSWMTSWorkerJob } from "../../@internals/index.js";
+import {
+  getBlobStorageService,
+  getConfigurationService,
+  type Converter3DConvertWMSWMTSWorkerJob,
+} from "../../@internals/index.js";
 import { initializeContainers } from "../../registries.js";
 
 export default async function run(
@@ -10,46 +16,92 @@ export default async function run(
 ): Promise<Converter3DConvertWMSWMTSWorkerJob["returnValue"]> {
   const { services } = await initializeContainers();
 
+  const configurationService = await getConfigurationService(services);
+  const blobStorageService = await getBlobStorageService(services);
+
   const throttledProgress = _.throttle(async (progress: number) => {
     await job.updateProgress(progress);
     job.log(progress);
   }, 5_000);
 
-  let reject = (reason?: any) => {};
-  let resolve = () => {};
+  const workdir = path.join(
+    (await configurationService.getConfiguration()).localProcessorFolder,
+    job.data.id,
+  );
 
-  const promise = new Promise<void>((res, rej) => {
-    resolve = res;
-    rej = rej;
-  });
+  try {
+    let reject: (reason?: any) => void = () => {};
+    let resolve: () => void = () => {};
 
-  const p = spawn("python3", [
-    path.join(process.cwd(), "python/convertWMSWMTSToTMS.py"),
-    "-u",
-    "https://geodienste.leipzig.de/l2/Portal/Luftbild_2024_mit_Beschriftung/MapServer/WMTS/1.0.0/WMTSCapabilities.xml",
-    "-l",
-    "Portal_Luftbild_2024_mit_Beschriftung",
-    "-z",
-    "10-10",
-  ]);
-  p.stdout.on("data", (data) => {
-    try {
-      const parsed = JSON.parse(data);
+    const promise = new Promise<void>((res, rej) => {
+      resolve = res;
+      reject = rej;
+    });
 
-      if (typeof parsed?.event?.progress === "number")
-        throttledProgress(data.event.progress * 100);
-    } catch (e) {
-      console.error(e);
-    }
-  });
+    const uploadQueue = queue<string, Error>(async (filePath: string) => {
+      const buffer = await readFile(filePath);
 
-  p.stderr.on("data", (data) => {
-    reject(data);
-  });
+      const [z, x, y] = filePath.split(path.sep).slice(-3);
 
-  p.on("close", (code) => {
-    resolve();
-  });
+      await blobStorageService.uploadData(
+        buffer,
+        job.data.containerName,
+        `${z}/${x}/${y}`,
+      );
 
-  await promise;
+      await rm(filePath);
+    }, 4);
+
+    const p = spawn(path.join(process.cwd(), ".venv/bin/python3"), [
+      path.join(process.cwd(), "python/convertWMSWMTSToTMS.py"),
+      "-u",
+      job.data.url,
+      "-l",
+      job.data.layer,
+      "-z",
+      `${job.data.startZoom}-${job.data.endZoom}`,
+      "-o",
+      workdir,
+    ]);
+
+    let stderrOutput = "";
+
+    p.stdout.on("data", (data) => {
+      const lines = data.toString().split("\n");
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        try {
+          const parsed = JSON.parse(line);
+          if (typeof parsed?.progress === "number") {
+            throttledProgress(parsed.progress * 100);
+          }
+          if (typeof parsed?.filename === "string") {
+            uploadQueue.push(parsed.filename);
+          }
+        } catch (e) {
+          job.log(`Failed to parse chunk: ${e}`);
+        }
+      }
+    });
+
+    p.stderr.on("data", (data) => {
+      stderrOutput += data.toString();
+    });
+
+    p.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(
+          new Error(`Python script failed with code ${code}: ${stderrOutput}`),
+        );
+      }
+    });
+
+    await promise;
+
+    if (!uploadQueue.idle()) await uploadQueue.drain();
+  } finally {
+    await rmdir(workdir, { recursive: true }); // cleanup
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "name": "mubea-trs-backend",
+  "name": "fhhvr-backend",
   "dockerComposeFile": [
     "docker-compose.yml"
   ],

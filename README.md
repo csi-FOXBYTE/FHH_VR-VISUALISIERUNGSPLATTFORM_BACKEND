@@ -1,68 +1,143 @@
-# WebBackend - Working With This Repository
+# WebBackend (FHH VR)
 
-This backend is a Fastify + TypeScript service that uses Prisma/ZenStack for the data model, BullMQ for background work, and `@csi-foxbyte/fastify-toab` for dependency injection/registration of services, controllers, and workers. The ZenStack schema is authored in the frontend repo and copied into this backend before code generation. Use pnpm for all commands; Node.js 20+ is recommended (Node 23 is used in the devcontainer).
+Backend-Service der FHH-VR-Plattform auf Basis von Fastify + TypeScript.
+Der Service stellt HTTP-Endpunkte, Hintergrundjobs (BullMQ), Datenkonvertierungen und Datenzugriff via Prisma/ZenStack bereit.
 
-## Project Layout
-- `zmodel/`: ZenStack schemas copied from the frontend (source of truth).
-- `prisma/schema.prisma`: Generated from `zmodel/schema.zmodel` (do not edit directly).
-- `src/`: Application code; each feature has `*.service.ts`, `*.controller.ts`, optional `workers/`.
-- `src/@internals/index.ts`, `src/registries.ts`: Auto-generated registries/helpers from `fastify-toab`.
-- `bin/`: Native tools used by converters.
-- Tooling: esbuild/tsx for dev+build (`pnpm dev` / `pnpm build`), pnpm 10, Node 23 (per `.devcontainer`).
+## Architektur im Überblick
 
-## Prerequisites & Environment
-- pnpm 10 (`corepack enable pnpm`) — pnpm is required for this project.
-- Node.js 20+ recommended (Node 23 in the devcontainer).
-- PostgreSQL reachable via `DATABASE_URL`.
-- Redis via `REDIS_CONNECTION_STRING` (set `REDIS_IS_CLUSTER=true` for cluster).
-- Azure storage via `AZURE_STORAGE_CONNECTION_STRING`.
-- Auth secrets: `AUTH_SECRET` (base64 encoded) and `PORT` for the HTTP server.
-- Optional: `APPLICATIONINSIGHTS_CONNECTION_STRING`, `WORKER_DISABLED=true` (skip worker init), `DISABLED_WORKERS=true` (skip worker startup inside workers).
-- Install dependencies: `pnpm install`.
+- `Fastify` als HTTP-Server
+- `Prisma + ZenStack` für Datenmodell und Policies
+- `BullMQ` für Worker/Queues (inkl. Bull Board UI)
+- `@csi-foxbyte/fastify-toab` für Service-/Controller-/Worker-Registrierung
+- `esbuild + tsx` für Dev-/Build-Workflow
+- `pnpm` als Package Manager
 
-### Running Locally
-- Start required services (PostgreSQL, Redis, optional Azure emulator).
-- `pnpm dev` - incremental build to `.dev` with automatic server restarts.
-- `pnpm build` - production build to `.build`.
-- `pnpm lint` - linting.
+## Projektstruktur
 
-## Adding Things
+- `src/`: Fachmodule (`*.service.ts`, `*.controller.ts`, optionale `workers/`)
+- `src/@internals/index.ts`, `src/registries.ts`: von Toab generiert
+- `zmodel/`: ZenStack-Quellschema (aus Frontend-Repo übernommen)
+- `prisma/schema.prisma`: aus `zmodel/schema.zmodel` generiert
+- `bin/`: externe Tools/Binaries für Konvertierung
+- `python/` + `requirements.txt`: Python-Helfer für Konvertierungs-Workflows
 
-### 1) Update the Data Model (ZenStack/Prisma)
-1. Make schema changes in the frontend repo (the ZenStack source of truth lives there).
-2. Copy the updated `zmodel/*.zmodel` files into this repo's `zmodel/` directory.
-3. Regenerate Prisma/ZenStack output: `pnpm zenstack-generate` (writes `prisma/schema.prisma`).
-4. Sync the database schema: `pnpm exec prisma db push` for quick dev sync, or `pnpm exec prisma migrate dev --name <change>` if you want a migration file.
-5. Regenerate Prisma client if needed: `pnpm exec prisma generate`.
-6. Update services/controllers to use the new model, preferring `getDbService` (ZenStack policy-enforced) over `getPrismaService` unless you intentionally bypass policies.
+## Voraussetzungen
 
-### 2) Add a New Service and HTTP Endpoints
-1. Scaffold with Toab (creates folders for you): `pnpm fastify-toab create service <name>` and `pnpm fastify-toab create controller <name>`.
-2. Implement business logic in the generated service using `createService("name", async ({ services }) => { ... }, { scope: "REQUEST" })` and consume other services via the helpers from `src/@internals/index.ts`.
-3. Define DTOs with `@sinclair/typebox` (see existing `*.dto.ts` files).
-4. Wire routes in the generated controller using `createController().rootPath("/your-path")`; attach `authMiddleware` where required and add `.body()`, `.params()`, `.query()`, `.output()` for validation/typing.
-5. Run `pnpm fastify-toab rebuild` to regenerate `src/registries.ts` and `src/@internals/index.ts` so the new service/controller is wired into Fastify. Do not hand-edit the generated files.
-6. Restart the dev server if it was running.
+- Node.js 20+ (im Docker/Devcontainer wird Node 23 genutzt)
+- pnpm 10
+- PostgreSQL
+- Redis
+- optional: Azure Storage, wenn Blob/Upload-Features genutzt werden
+- optional: Python venv, wenn lokale Konvertierungsfunktionen genutzt werden
 
-### 3) Add a Background Worker (BullMQ)
-1. Scaffold with Toab (creates folders automatically): `pnpm fastify-toab create worker <name>`.
-2. Implement the generated worker using `createWorker()`, set a queue name, connection (`defaultConnection` from `src/connection.ts`), and optional schedulers (`.upsertJobScheduler`).
-3. Implement the `processor` to call your services via the helper getters.
-4. Regenerate registries with `pnpm fastify-toab rebuild` so the worker is registered and its queue exposed.
-5. Use `WORKER_DISABLED=true` to skip worker initialization when you only want HTTP routes running.
+## Umgebungsvariablen
 
-### 4) Working With Data Access
-- Use `getDbService` for requests that must respect ZenStack `@allow/@deny` rules tied to the current session.
-- Use `getPrismaService` only when you intentionally need raw Prisma access (e.g., startup tasks).
-- Cache helpers live in `cacheService`, blob access in `blobStorageService`, authentication/session info in `authService`.
+`dotenv` wird beim Serverstart geladen (`src/index.ts`).
 
-## Autogenerated Files - Do Not Edit by Hand
-- `prisma/schema.prisma` (from ZenStack).
-- `src/registries.ts` and `src/@internals/index.ts` (from `pnpm fastify-toab rebuild`).
-- Files marked with `AUTOGENERATED!` comments are regenerated by tooling; change the source (service/controller/worker or zmodel) and re-run the relevant generator instead.
+| Variable | Pflicht | Zweck |
+|---|---|---|
+| `PORT` | Ja | HTTP-Port |
+| `DATABASE_URL` | Ja | PostgreSQL-Verbindung (Prisma) |
+| `REDIS_CONNECTION_STRING` | Ja | Redis-Verbindung für Queues/Events |
+| `AUTH_SECRET` | Ja | Auth-/Token-Secret |
+| `AZURE_STORAGE_CONNECTION_STRING` | Für Blob-/Converter-Features | Azure Blob Storage |
+| `REDIS_IS_CLUSTER` | Optional | `true` für Redis-Cluster |
+| `WORKER_DISABLED` | Optional | `true` deaktiviert Worker-Registrierung beim Start |
+| `DISABLED_WORKERS` | Optional | `true` deaktiviert Worker-Ausführung intern |
+| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Optional | Azure Application Insights / OTel Export |
 
-## Build & Release
-- `pnpm build` - production build (outputs to `.build`).
-- `pnpm publish:docker` - build/tag/push the Docker image (uses `package.json` version).
+## Schnellstart (lokal)
 
-Follow these steps when you add models, routes, or workers so the generated artifacts stay in sync with the frontend-owned ZenStack schema and the Fastify registries.
+```bash
+corepack enable pnpm
+pnpm install
+pnpm zenstack-generate
+pnpm exec prisma generate
+pnpm exec prisma db push
+```
+
+Optional für lokale Python-Converter:
+
+```bash
+python3 -m venv --system-site-packages .venv
+source .venv/bin/activate
+pip install --no-cache-dir -r requirements.txt
+```
+
+Service starten:
+
+```bash
+pnpm dev
+```
+
+## Nützliche Befehle
+
+- `pnpm dev`: inkrementeller Build nach `.dev` + Auto-Restart
+- `pnpm build`: Produktionsbuild nach `.build`
+- `pnpm lint`: Oxlint + ESLint
+- `pnpm zenstack-generate`: generiert `prisma/schema.prisma` aus `zmodel`
+- `pnpm publish:docker`: baut und pusht Image mit aktueller Version
+
+## Laufzeit-Endpunkte
+
+- `GET /ping`: einfacher Health-Check
+- `GET /docs`: Swagger UI
+- `GET /bullMQ`: Bull Board UI für Queues/Jobs
+
+## Entwicklungs-Workflows
+
+### 1) Datenmodell ändern (ZenStack/Prisma)
+
+1. ZModel im Frontend-Repo aktualisieren (Source of Truth).
+2. Änderungen nach `zmodel/` dieses Repos übernehmen.
+3. `pnpm zenstack-generate` ausführen.
+4. DB synchronisieren:
+   - schnell: `pnpm exec prisma db push`
+   - mit Migration: `pnpm exec prisma migrate dev --name <name>`
+5. Falls nötig Prisma Client neu erzeugen: `pnpm exec prisma generate`.
+
+### 2) Neues Feature (Service + Controller)
+
+1. Scaffold:
+   - `pnpm fastify-toab create service <name>`
+   - `pnpm fastify-toab create controller <name>`
+2. Logik im Service implementieren.
+3. DTOs mit `@sinclair/typebox` definieren.
+4. Routen im Controller definieren.
+5. Generierung aktualisieren:
+   - `pnpm fastify-toab rebuild`
+6. Dev-Server neu starten, falls erforderlich.
+
+### 3) Neuer Worker (BullMQ)
+
+1. Scaffold: `pnpm fastify-toab create worker <name>`
+2. Queue + Processor implementieren.
+3. Registries neu generieren: `pnpm fastify-toab rebuild`
+4. Nur HTTP ohne Worker testen: `WORKER_DISABLED=true`
+
+### 4) Datenzugriff: wann `getDbService` vs. `getPrismaService`
+
+- `getDbService`: wenn ZenStack-Policies (`@allow/@deny`) gelten sollen
+- `getPrismaService`: nur wenn bewusst ohne Policy-Layer gearbeitet wird
+
+## Docker
+
+Lokales Image bauen:
+
+```bash
+DOCKER_BUILDKIT=1 docker build --secret id=env,src=.env -t webbackend:local .
+```
+
+Container starten:
+
+```bash
+docker run --rm -p 3000:3000 --env-file .env webbackend:local
+```
+
+## Generierte Dateien (nicht manuell bearbeiten)
+
+- `prisma/schema.prisma` (ZenStack-Output)
+- `src/registries.ts` (Toab-Output)
+- `src/@internals/index.ts` (Toab-Output)
+
+Änderungen immer an der Quelle vornehmen und danach die jeweiligen Generatoren ausführen.

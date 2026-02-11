@@ -18,13 +18,23 @@ const baseLayerService = createService(
       containerName: string;
     }) {
       const url = blobStorageService.getContainerReadSASUrl(
-        baseLayer.containerName
+        baseLayer.containerName,
       );
 
-      if (baseLayer.type === "TILES3D") {
-        const newUrl = new URL(url);
+      switch (baseLayer.type) {
+        case "TILES3D": {
+          const newUrl = new URL(url);
 
-        return `${newUrl.protocol}//${newUrl.host}${newUrl.pathname}/tileset.json${newUrl.search}`;
+          return `${newUrl.protocol}//${newUrl.host}${newUrl.pathname}/tileset.json${newUrl.search}`;
+        }
+        case "IMAGERY": {
+          const newUrl = new URL(url);
+
+          return `${newUrl.protocol}//${newUrl.host}${newUrl.pathname}/{z}/{x}/{y}.png${newUrl.search}`;
+        }
+      }
+
+      if (baseLayer.type === "TILES3D") {
       } else {
         return url;
       }
@@ -41,7 +51,7 @@ const baseLayerService = createService(
         if (!baseLayer.containerName) return;
         try {
           await blobStorageService.deleteContainer(baseLayer.containerName);
-        } catch { }
+        } catch {}
       },
       createBaseLayerHref,
       async list() {
@@ -54,9 +64,9 @@ const baseLayerService = createService(
           type: baseLayer.type,
           href: baseLayer.containerName
             ? createBaseLayerHref({
-              containerName: baseLayer.containerName,
-              type: baseLayer.type,
-            })
+                containerName: baseLayer.containerName,
+                type: baseLayer.type,
+              })
             : baseLayer.href!,
         }));
       },
@@ -87,9 +97,9 @@ const baseLayerService = createService(
           type: baseLayer.type,
           href: baseLayer.containerName
             ? createBaseLayerHref({
-              containerName: baseLayer.containerName,
-              type: baseLayer.type,
-            })
+                containerName: baseLayer.containerName,
+                type: baseLayer.type,
+              })
             : baseLayer.href!,
         }));
       },
@@ -116,7 +126,7 @@ const baseLayerService = createService(
         id: string,
         href: string | null,
         visibleForGroups: string[],
-        isPublic: boolean
+        isPublic: boolean,
       ) {
         const session = await authService.getSession();
 
@@ -137,7 +147,7 @@ const baseLayerService = createService(
       },
     };
   },
-  { scope: "REQUEST" }
+  { scope: "REQUEST" },
 );
 
 export default baseLayerService;
