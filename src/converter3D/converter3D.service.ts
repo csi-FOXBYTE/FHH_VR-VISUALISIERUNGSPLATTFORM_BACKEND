@@ -1,10 +1,8 @@
 import { createService } from "@csi-foxbyte/fastify-toab";
 import { Readable } from "node:stream";
 import {
-  getAuthService,
   getBlobStorageService,
   getConfigurationService,
-  getConverter3DConvert3DTilesWorker,
   getConverter3DConvert3DTilesWorkerQueue,
   getConverter3DConvertProjectModelWorkerQueue,
   getConverter3DConvertTerrainWorkerQueue,
@@ -236,6 +234,7 @@ const converter3DService = createService(
         layer: string,
         startZoom: number,
         endZoom: number,
+        ownerId: string,
       ) {
         const { id } = await prismaService.baseLayer.create({
           data: {
@@ -244,6 +243,7 @@ const converter3DService = createService(
             type: "IMAGERY",
             status: "ACTIVE",
             progress: 0,
+            ownerId,
           },
         });
 

@@ -1,23 +1,23 @@
 import { createController } from "@csi-foxbyte/fastify-toab";
-import {
-  downloadProjectModelRequestDTIO,
-  getProjectModelStatusRequestDTO,
-  getProjectModelStatusResponseDTO,
-  convert3DTileRequestDTO,
-  convert3DTileResponseDTO,
-  convertTerrainRequestDTO,
-  convertTerrainResponseDTO,
-  convertProjectModelRequestDTO,
-  convertProjectModelResponseDTO,
-  convertWMSWMTSRequestDTO,
-} from "./converter3D.dto.js";
-import { authMiddleware } from "../auth/auth.middleware.js";
 import { Type } from "@sinclair/typebox";
 import proj4list from "proj4-list";
 import {
   getBlobStorageService,
   getConverter3DService,
 } from "../@internals/index.js";
+import { authMiddleware } from "../auth/auth.middleware.js";
+import {
+  convert3DTileRequestDTO,
+  convert3DTileResponseDTO,
+  convertProjectModelRequestDTO,
+  convertProjectModelResponseDTO,
+  convertTerrainRequestDTO,
+  convertTerrainResponseDTO,
+  convertWMSWMTSRequestDTO,
+  downloadProjectModelRequestDTIO,
+  getProjectModelStatusRequestDTO,
+  getProjectModelStatusResponseDTO,
+} from "./converter3D.dto.js";
 
 const converter3DController = createController()
   .use(authMiddleware)
@@ -181,7 +181,7 @@ converter3DController
 converter3DController
   .addRoute("POST", "/convertWMSWMTS")
   .body(convertWMSWMTSRequestDTO)
-  .handler(async ({ services, body }) => {
+  .handler(async ({ services, body, ctx }) => {
     const converter3DService = await getConverter3DService(services);
 
     await converter3DService.convertWMSWMTS(
@@ -190,6 +190,7 @@ converter3DController
       body.layer,
       body.startZoom,
       body.endZoom,
+      ctx.session.user.id,
     );
   });
 
