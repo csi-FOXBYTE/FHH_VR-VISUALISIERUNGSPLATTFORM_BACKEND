@@ -1,4 +1,7 @@
+import "dotenv/config"; // must be first!
+
 import { ConnectionOptions } from "bullmq";
+
 import { Cluster } from "ioredis";
 
 export function parseRedisConnectionString(uri: string) {
@@ -29,7 +32,7 @@ export function parseRedisConnectionString(uri: string) {
 }
 
 const connectionOptions = parseRedisConnectionString(
-  process.env.REDIS_CONNECTION_STRING!
+  process.env.REDIS_CONNECTION_STRING ?? "",
 );
 
 function createConnection() {
@@ -43,6 +46,7 @@ function createConnection() {
       ],
       {
         redisOptions: {
+          maxRetriesPerRequest: null,
           password: connectionOptions.password,
           tls: connectionOptions.tls
             ? {
@@ -51,17 +55,18 @@ function createConnection() {
             : undefined,
         },
         ...connectionOptions.options,
-      }
+      },
     );
   }
 
   return {
     host: connectionOptions.host,
     port: connectionOptions.port,
-    redisOptions: {
-      password: connectionOptions.password,
-      tls: connectionOptions.tls ? { servername: connectionOptions.host } : undefined,
-    }
+    password: connectionOptions.password,
+    tls: connectionOptions.tls
+      ? { servername: connectionOptions.host }
+      : undefined,
+    maxRetriesPerRequest: null,
   } as ConnectionOptions;
 }
 
