@@ -25,7 +25,7 @@ export const projectDTO = Type.Object({
         y: Type.Number(),
         z: Type.Number(),
       }),
-    })
+    }),
   ),
   startingPoints: Type.Array(
     Type.Object({
@@ -58,7 +58,7 @@ export const projectDTO = Type.Object({
         z: Type.String(),
       }),
       uiEndPointEpsg: Type.String(),
-    })
+    }),
   ),
   layers: Type.Array(
     Type.Object({
@@ -75,10 +75,10 @@ export const projectDTO = Type.Object({
               x: Type.Number(),
               y: Type.Number(),
               z: Type.Number(),
-            })
+            }),
           ),
           affectsTerrain: Type.Boolean(),
-        })
+        }),
       ),
       projectModels: Type.Array(
         Type.Object({
@@ -118,9 +118,9 @@ export const projectDTO = Type.Object({
             z: Type.String(),
           }),
           uiEpsg: Type.String(),
-        })
+        }),
       ),
-    })
+    }),
   ),
   extensionLayers: Type.Array(
     Type.Object({
@@ -128,7 +128,7 @@ export const projectDTO = Type.Object({
       name: Type.String(),
       href: Type.String(),
       type: Type.String(),
-    })
+    }),
   ),
   allAvailableBaseLayers: Type.Array(
     Type.Object({
@@ -138,7 +138,7 @@ export const projectDTO = Type.Object({
       sizeGB: Type.Number(),
       href: Type.String(),
       type: Type.String(),
-    })
+    }),
   ),
 });
 
@@ -148,7 +148,6 @@ export const unityProjectDTO = Type.Object({
   projectSasQueryParameters: Type.String(),
   description: Type.String(),
   maximumFlyingHeight: Type.Number(),
-  renderDistance: Type.Number(),
   startingPoints: Type.Array(
     Type.Object({
       id: Type.String(),
@@ -165,7 +164,7 @@ export const unityProjectDTO = Type.Object({
         y: Type.Number(),
         z: Type.Number(),
       }),
-    })
+    }),
   ),
   variants: Type.Array(
     Type.Object({
@@ -181,7 +180,7 @@ export const unityProjectDTO = Type.Object({
             Type.Literal("TERRAIN"),
             Type.Literal("IMAGERY"),
           ]),
-        })
+        }),
       ),
       clippingPolygons: Type.Array(
         Type.Object({
@@ -192,9 +191,9 @@ export const unityProjectDTO = Type.Object({
               x: Type.Number(),
               y: Type.Number(),
               z: Type.Number(),
-            })
+            }),
           ),
-        })
+        }),
       ),
       models: Type.Array(
         Type.Object({
@@ -217,9 +216,9 @@ export const unityProjectDTO = Type.Object({
             z: Type.Number(),
             w: Type.Number(),
           }),
-        })
+        }),
       ),
-    })
+    }),
   ),
 });
 export type UnityProjectDTO = Static<typeof unityProjectDTO>;
