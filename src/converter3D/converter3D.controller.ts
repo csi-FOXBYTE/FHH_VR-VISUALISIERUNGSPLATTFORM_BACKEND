@@ -173,6 +173,7 @@ converter3DController
       return true;
     },
     {
+      // @ts-ignore
       schema: { consumes: ["multipart/form-data"] },
       validatorCompiler: () => () => ({ value: true }),
     },

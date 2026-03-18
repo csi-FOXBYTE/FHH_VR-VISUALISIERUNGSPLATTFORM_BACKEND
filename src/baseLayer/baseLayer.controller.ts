@@ -67,7 +67,7 @@ baseLayerController
       Type.Object({
         id: Type.String(),
         name: Type.String(),
-        href: Type.String(),
+        href: Type.Optional(Type.String()),
         type: Type.String(),
         description: Type.String(),
       })
@@ -86,7 +86,7 @@ baseLayerController
       Type.Object({
         id: Type.String(),
         name: Type.String(),
-        href: Type.String(),
+        href: Type.Optional(Type.String()),
         type: Type.String(),
         description: Type.String(),
       })

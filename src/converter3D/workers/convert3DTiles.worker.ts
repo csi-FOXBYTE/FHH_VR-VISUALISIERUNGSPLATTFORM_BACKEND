@@ -62,6 +62,6 @@ const convert3DTilesWorker = createWorker()
     telemetry: new BullMQOtel("bullmq"),
   })
   .connection(defaultConnection)
-  .processor(new URL("./convert3DTiles.sandboxedWorker.js", import.meta.url));
+  .processor(new URL("./converter3D/workers/convert3DTiles.sandboxedWorker.js", import.meta.url));
 
 export default convert3DTilesWorker;

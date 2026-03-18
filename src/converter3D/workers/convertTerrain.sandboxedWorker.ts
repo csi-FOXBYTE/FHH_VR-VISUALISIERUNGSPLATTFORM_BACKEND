@@ -3,14 +3,11 @@ import { generate, preprocess } from "@csi-foxbyte/mesh-dem-to-terrain";
 import _ from "lodash";
 import { mkdir, rm } from "node:fs/promises";
 import path from "node:path";
-import { injectPinoLogger } from "../../lib/pino.js";
-import { initializeContainers } from "../../registries.js";
+import { initializeContainers } from "../../@internals/registries.js";
 import {
   Converter3DConvertTerrainWorkerJob,
   getBlobStorageService,
 } from "../../@internals/index.js";
-
-injectPinoLogger();
 
 export default async function run(
   job: Converter3DConvertTerrainWorkerJob
@@ -57,7 +54,7 @@ export default async function run(
     try {
       await rm(zipPath, { force: true, recursive: true });
       job.log("Removed zip file.");
-    } catch {}
+    } catch { }
 
     try {
       job.log("Generating...");
@@ -102,7 +99,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
     job.log("Finished.");
     job.updateProgress(100);
   } catch (e) {
@@ -113,7 +110,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
     throw e;
   }
 }

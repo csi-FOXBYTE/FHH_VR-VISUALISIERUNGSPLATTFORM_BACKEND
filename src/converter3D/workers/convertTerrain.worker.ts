@@ -79,6 +79,6 @@ const convertTerrainWorker = createWorker()
     telemetry: new BullMQOtel("bullmq"),
   })
   .connection(defaultConnection)
-  .processor(new URL("./convertTerrain.sandboxedWorker.js", import.meta.url));
+  .processor(new URL("./converter3D/workers/convertTerrain.sandboxedWorker.js", import.meta.url));
 
 export default convertTerrainWorker;

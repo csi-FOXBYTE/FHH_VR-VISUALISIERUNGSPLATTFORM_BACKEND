@@ -28,6 +28,7 @@ import converter3DConvertTerrainWorker from "../converter3D/workers/convertTerra
 import converter3DConvertWMSWMTSWorker from "../converter3D/workers/convertWMSWMTS.worker.js";
 import converter3DUpdateConverterWorkerConfigurationsWorker from "../converter3D/workers/updateConverterWorkerConfigurations.worker.js";
 import eventsRemoveOldEventsWorker from "../events/workers/removeOldEvents.worker.js";
+import testHelloWorldWorker from "../test/workers/helloWorld.worker.js";
 import userDeleteInactiveUsersWorker from "../user/workers/deleteInactiveUsers.worker.js";
 
 export type AppDownloadService = InferService<typeof appDownloadService>;
@@ -68,6 +69,9 @@ export type Converter3DUpdateConverterWorkerConfigurationsWorkerJob = (typeof co
 export type EventsRemoveOldEventsWorker = (typeof eventsRemoveOldEventsWorker)["worker"];
 export type EventsRemoveOldEventsWorkerQueue = (typeof eventsRemoveOldEventsWorker)["queue"];
 export type EventsRemoveOldEventsWorkerJob = (typeof eventsRemoveOldEventsWorker)["job"];
+export type TestHelloWorldWorker = (typeof testHelloWorldWorker)["worker"];
+export type TestHelloWorldWorkerQueue = (typeof testHelloWorldWorker)["queue"];
+export type TestHelloWorldWorkerJob = (typeof testHelloWorldWorker)["job"];
 export type UserDeleteInactiveUsersWorker = (typeof userDeleteInactiveUsersWorker)["worker"];
 export type UserDeleteInactiveUsersWorkerQueue = (typeof userDeleteInactiveUsersWorker)["queue"];
 export type UserDeleteInactiveUsersWorkerJob = (typeof userDeleteInactiveUsersWorker)["job"];
@@ -164,6 +168,12 @@ export function getEventsRemoveOldEventsWorker(deps: WorkerContainer) {
 }
 export function getEventsRemoveOldEventsWorkerQueue(deps: QueueContainer) {
   return deps.get<EventsRemoveOldEventsWorkerQueue>(eventsRemoveOldEventsWorker.queueName);
+}
+export function getTestHelloWorldWorker(deps: WorkerContainer) {
+  return deps.get<TestHelloWorldWorker>(testHelloWorldWorker.queueName);
+}
+export function getTestHelloWorldWorkerQueue(deps: QueueContainer) {
+  return deps.get<TestHelloWorldWorkerQueue>(testHelloWorldWorker.queueName);
 }
 export function getUserDeleteInactiveUsersWorker(deps: WorkerContainer) {
   return deps.get<UserDeleteInactiveUsersWorker>(userDeleteInactiveUsersWorker.queueName);

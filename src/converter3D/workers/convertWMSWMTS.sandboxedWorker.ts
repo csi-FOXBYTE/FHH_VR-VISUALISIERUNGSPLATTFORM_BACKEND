@@ -9,7 +9,7 @@ import {
   getConfigurationService,
   type Converter3DConvertWMSWMTSWorkerJob,
 } from "../../@internals/index.js";
-import { initializeContainers } from "../../registries.js";
+import { initializeContainers } from "../../@internals/registries.js";
 
 export default async function run(
   job: Converter3DConvertWMSWMTSWorkerJob,
@@ -30,8 +30,8 @@ export default async function run(
   );
 
   try {
-    let reject: (reason?: any) => void = () => {};
-    let resolve: () => void = () => {};
+    let reject: (reason?: any) => void = () => { };
+    let resolve: () => void = () => { };
 
     const promise = new Promise<void>((res, rej) => {
       resolve = res;

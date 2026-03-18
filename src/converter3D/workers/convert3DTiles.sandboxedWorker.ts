@@ -10,16 +10,13 @@ import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
 import { cityGMLToCityJSON } from "../../lib/CityGMLTools.js";
-import { injectPinoLogger } from "../../lib/pino.js";
-import { initializeContainers } from "../../registries.js";
+import { initializeContainers } from "../../@internals/registries.js";
 import {
   getBlobStorageService,
   type Converter3DConvert3DTilesWorkerJob,
 } from "../../@internals/index.js";
 import dayjs from "dayjs";
 import { queue } from "async";
-
-injectPinoLogger();
 
 function printLogWithDate(log: string) {
   return `${dayjs().format("HH:mm:ss DD.MM.YYYY")}: ${log}`;
@@ -47,7 +44,7 @@ export default async function run(
 
     try {
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
 
     await mkdir(rootPath, { recursive: true });
 
@@ -72,7 +69,7 @@ export default async function run(
     try {
       await rm(zipPath, { force: true });
       job.log(printLogWithDate("Removed zip file."));
-    } catch {}
+    } catch { }
 
     await throttledProgress(0.1 * 100);
 
@@ -98,7 +95,7 @@ export default async function run(
     try {
       await rm(unpackedPath, { force: true, recursive: true });
       job.log(printLogWithDate("Removed unpacked files."));
-    } catch {}
+    } catch { }
 
     const tilesPath = path.join(rootPath, "tiles");
 
@@ -165,7 +162,7 @@ export default async function run(
       );
       await rm(rootPath, { force: true, recursive: true });
       await rm(dbFilePath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
   } catch (e) {
     job.log(JSON.stringify(e));
     try {
@@ -174,7 +171,7 @@ export default async function run(
         job.data.blobName
       );
       await rm(rootPath, { force: true, recursive: true });
-    } catch {}
+    } catch { }
     throw e;
   }
 }

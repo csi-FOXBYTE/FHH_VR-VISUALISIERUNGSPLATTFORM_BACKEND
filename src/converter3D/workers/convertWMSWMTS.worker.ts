@@ -69,6 +69,6 @@ const convertWMSWMTSWorker = createWorker()
     }
   })
   .connection(defaultConnection)
-  .processor(new URL("./convertWMSWMTS.sandboxedWorker.js", import.meta.url));
+  .processor(new URL("./converter3D/workers/convertWMSWMTS.sandboxedWorker.js", import.meta.url));
 
 export default convertWMSWMTSWorker;

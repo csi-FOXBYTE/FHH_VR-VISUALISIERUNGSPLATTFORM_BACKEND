@@ -20,11 +20,8 @@ import sharp from "sharp";
 import { Matrix4 } from "three";
 // @ts-expect-error has no types
 import draco3d from "draco3dgltf";
-import { injectPinoLogger } from "../../lib/pino.js";
-import { initializeContainers } from "../../registries.js";
+import { initializeContainers } from "../../@internals/registries.js";
 import { getBlobStorageService, type Converter3DConvertProjectModelWorkerJob } from "../../@internals/index.js";
-
-injectPinoLogger();
 
 Logger.DEFAULT_INSTANCE = new Logger(Logger.Verbosity.SILENT);
 

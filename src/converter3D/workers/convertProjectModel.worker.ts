@@ -47,7 +47,7 @@ const convertProjectModelWorker = createWorker()
   })
   .connection(defaultConnection)
   .processor(
-    new URL("./convertProjectModel.sandboxedWorker.js", import.meta.url)
+    new URL("./converter3D/workers/convertProjectModel.sandboxedWorker.js", import.meta.url)
   );
 
 export default convertProjectModelWorker;

@@ -273,12 +273,12 @@ const projectService = createService(
         allAvailableBaseLayers: allAvailableBaseLayers.map((baseLayer) => ({
           ...baseLayer,
           href:
-            baseLayer.containerName !== null
+            (baseLayer.containerName !== null
               ? baseLayerService.createBaseLayerHref({
                 containerName: baseLayer.containerName!,
                 type: baseLayer.type,
               })
-              : baseLayer.href!,
+              : baseLayer.href!)!,
         })),
         extensionLayers: project.extensionLayers.map((e) => ({
           id: e.id,

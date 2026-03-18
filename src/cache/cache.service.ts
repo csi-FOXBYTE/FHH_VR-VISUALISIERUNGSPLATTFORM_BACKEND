@@ -19,7 +19,7 @@ const cacheService = createService(
     });
 
     const cache = createCache({
-      stores: [memoryStore as any, redisStore],
+      stores: [memoryStore as any, redisStore], // could be dangerous when scaled horizontally
     });
 
     return cache;
