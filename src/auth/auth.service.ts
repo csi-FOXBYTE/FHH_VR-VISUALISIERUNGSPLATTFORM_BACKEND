@@ -61,7 +61,7 @@ const authService = createService(
           const { payload } = await jwtDecrypt<{
             sessionToken: string;
             userId: string;
-          }>(tokenRaw, Buffer.from(process.env.AUTH_SECRET!, "base64"), {
+          }>(tokenRaw, Buffer.from(process.env.AUTH_SECRET, "base64"), {
             audience: "urn:fhhvr",
             maxTokenAge: "60 minutes",
             clockTolerance: "5 minutes",

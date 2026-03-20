@@ -101,4 +101,4 @@ USER nodeuser
 
 EXPOSE 3000
 
-CMD ["node", "--expose-gc", ".build/index.js"]
+CMD ["node", "--expose-gc", ".build/@internals/run.js"]

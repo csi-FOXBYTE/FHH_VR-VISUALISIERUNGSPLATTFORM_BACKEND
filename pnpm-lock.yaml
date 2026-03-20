@@ -27,8 +27,8 @@ importers:
         specifier: ^0.0.18
         version: 0.0.18(jiti@2.6.1)(yaml@2.8.1)
       '@csi-foxbyte/fastify-toab':
-        specifier: 0.2.0-rc.1
-        version: 0.2.0-rc.1
+        specifier: 0.2.0-rc.3
+        version: 0.2.0-rc.3(@bull-board/ui@6.14.0)
       '@csi-foxbyte/mesh-dem-to-terrain':
         specifier: ^0.0.4
         version: 0.0.4
@@ -474,11 +474,22 @@ packages:
     peerDependencies:
       '@bull-board/ui': 6.14.0
 
+  '@bull-board/api@6.20.6':
+    resolution: {integrity: sha512-B/9OlKWJ/He421Lyuc7htMpKN4R8hcNu5uoIRiyh9y9J0kMOfxfs82GKXdfR9R0595LvAcCOSvjn8EtWHXesTA==}
+    peerDependencies:
+      '@bull-board/ui': 6.20.6
+
   '@bull-board/fastify@6.14.0':
     resolution: {integrity: sha512-qkOn9z5Xo/Y/ZS7hXEOPI51iKC4sgzXrEjO1vf7Bw+Zq8AU4nR1VR6UU7GM931bs7/r/TizNfO16/SvKghebpQ==}
 
+  '@bull-board/fastify@6.20.6':
+    resolution: {integrity: sha512-iV6Hurflx664TJHnHAyNyCe3VxIwGJWPAgwHu0pxfURcbqlfTJaOVJahezZExoGip87G36/9WUmOVvJ9ctwJ6Q==}
+
   '@bull-board/ui@6.14.0':
     resolution: {integrity: sha512-5yqfS9CwWR8DBxpReIbqv/VSPFM/zT4KZ75keyApMiejasRC2joaHqEzYWlMCjkMycbNNCvlQNlTbl+C3dE/dg==}
+
+  '@bull-board/ui@6.20.6':
+    resolution: {integrity: sha512-nEXRgMHHd48ssINgvDqT7b4p/+57XRf3CUcTGQ7UIJb4F7n/kRRj8+ZQvQmMFsYGdNmbNU2eNheQ05vXSYiqdQ==}
 
   '@cacheable/utils@2.1.0':
     resolution: {integrity: sha512-ZdxfOiaarMqMj+H7qwlt5EBKWaeGihSYVHdQv5lUsbn8MJJOTW82OIwirQ39U5tMZkNvy3bQE+ryzC+xTAb9/g==}
@@ -506,12 +517,6 @@ packages:
   '@chevrotain/utils@10.4.2':
     resolution: {integrity: sha512-V34dacxWLwKcvcy32dx96ADJVdB7kOJLm7LyBkBQw5u5HC9WdEFw2G17zml+U3ivavGTrGPJHl8o9/UJm0PlUw==}
 
-  '@clack/core@1.1.0':
-    resolution: {integrity: sha512-SVcm4Dqm2ukn64/8Gub2wnlA5nS2iWJyCkdNHcvNHPIeBTGojpdJ+9cZKwLfmqy7irD4N5qLteSilJlE0WLAtA==}
-
-  '@clack/prompts@1.1.0':
-    resolution: {integrity: sha512-pkqbPGtohJAvm4Dphs2M8xE29ggupihHdy1x84HNojZuMtFsHiUlRvqD24tM2+XmI+61LlfNceM3Wr7U5QES5g==}
-
   '@colors/colors@1.6.0':
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
@@ -519,8 +524,8 @@ packages:
   '@csi-foxbyte/cityjson-to-3d-tiles@0.0.18':
     resolution: {integrity: sha512-fPR0Oi4WxMBWFJjfCFeN6P2i92BLExeRcbzFQ6WF9YAM/cdHAwkpdYzbLKW5wgEtdjIAqFxSlP7ilAcY1pZbxQ==}
 
-  '@csi-foxbyte/fastify-toab@0.2.0-rc.1':
-    resolution: {integrity: sha512-Gi6B4C41aBM6TYqto8PRgKECt6c9FvrwkH3i/W66+5W1HygpRj3XtITDTyOeALX+F6A6R3NB22PdTwfYHIhbng==}
+  '@csi-foxbyte/fastify-toab@0.2.0-rc.3':
+    resolution: {integrity: sha512-Y8/+LO3E1m6xx6NY6PaVhFlRN5Touqm8x1rxrGGSiBZ9tHCzk1xsYJk0qdI/aAKnUcVwhtgoqb6lT8DICAup3g==}
     hasBin: true
 
   '@csi-foxbyte/mesh-dem-to-terrain@0.0.4':
@@ -755,6 +760,9 @@ packages:
   '@fastify/cors@11.1.0':
     resolution: {integrity: sha512-sUw8ed8wP2SouWZTIbA7V2OQtMNpLj2W6qJOYhNdcmINTu6gsxVYXjQiM9mdi8UUDlcoDDJ/W2syPo1WB2QjYA==}
 
+  '@fastify/cors@11.2.0':
+    resolution: {integrity: sha512-LbLHBuSAdGdSFZYTLVA3+Ch2t+sA6nq3Ejc6XLAKiQ6ViS2qFnvicpj0htsx03FyYeLs04HfRNBsz/a8SvbcUw==}
+
   '@fastify/deepmerge@3.1.0':
     resolution: {integrity: sha512-lCVONBQINyNhM6LLezB6+2afusgEYR4G8xenMsfe+AT+iZ7Ca6upM5Ha8UkZuYSnuMw3GWl/BiPXnLMi/gSxuQ==}
 
@@ -776,6 +784,9 @@ packages:
   '@fastify/multipart@9.2.1':
     resolution: {integrity: sha512-U4221XDMfzCUtfzsyV1/PkR4MNgKI0158vUUyn/oF2Tl6RxMc+N7XYLr5fZXQiEC+Fmw5zFaTjxsTGTgtDtK+g==}
 
+  '@fastify/multipart@9.4.0':
+    resolution: {integrity: sha512-Z404bzZeLSXTBmp/trCBuoVFX28pM7rhv849Q5TsbTFZHuk1lc4QjQITTPK92DKVpXmNtJXeHSSc7GYvqFpxAQ==}
+
   '@fastify/otel@0.9.4':
     resolution: {integrity: sha512-NboTg+WAJPQ/prwmXA9ey2araV2Dj5+5NoCP5dZ5sI49wGKuZZ3k0kGLiFD1CIPEh2bI2G2HXF7ozTbDauh9Yg==}
     peerDependencies:
@@ -795,6 +806,9 @@ packages:
 
   '@fastify/static@8.3.0':
     resolution: {integrity: sha512-yKxviR5PH1OKNnisIzZKmgZSus0r2OZb8qCSbqmw34aolT4g3UlzYfeBRym+HJ1J471CR8e2ldNub4PubD1coA==}
+
+  '@fastify/static@9.0.0':
+    resolution: {integrity: sha512-r64H8Woe/vfilg5RTy7lwWlE8ZZcTrc3kebYFMEUBrMqlydhQyoiExQXdYAy2REVpST/G35+stAM8WYp1WGmMA==}
 
   '@fastify/swagger-ui@5.2.3':
     resolution: {integrity: sha512-e7ivEJi9EpFcxTONqICx4llbpB2jmlI+LI1NQ/mR7QGQnyDOqZybPK572zJtcdHZW4YyYTBHcP3a03f1pOh0SA==}
@@ -2380,6 +2394,10 @@ packages:
   balanced-match@1.0.2:
     resolution: {integrity: sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==}
 
+  balanced-match@4.0.4:
+    resolution: {integrity: sha512-BLrgEcRTwX2o6gGxGOCNyMvGSp35YofuYzw9h1IMTRmKqttAZZVU67bdb9Pr2vUHA8+j3i2tJfjO6C6+4myGTA==}
+    engines: {node: 18 || 20 || >=22}
+
   bare-events@2.8.1:
     resolution: {integrity: sha512-oxSAxTS1hRfnyit2CL5QpAOS5ixfBjj6ex3yTNvXyY/kE719jQ/IjuESJBK2w5v4wwQRAHGseVJXx9QBYOtFGQ==}
     peerDependencies:
@@ -2456,6 +2474,10 @@ packages:
 
   brace-expansion@2.0.2:
     resolution: {integrity: sha512-Jt0vHyM+jmUBqojB7E1NIYadt0vI0Qxjxd2TErW94wDz+E2LAm5vKMXXwg6ZZBTHPuUlDgQHKXvjGBdfcF1ZDQ==}
+
+  brace-expansion@5.0.4:
+    resolution: {integrity: sha512-h+DEnpVvxmfVefa4jFbCf5HdH5YMDXRsmKflpf1pILZWRFlTbJpxeU55nJl4Smt5HQaGzg1o6RHFPJaOqnmBDg==}
+    engines: {node: 18 || 20 || >=22}
 
   braces@3.0.3:
     resolution: {integrity: sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==}
@@ -2694,6 +2716,10 @@ packages:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
     engines: {node: '>= 0.6'}
 
+  content-disposition@1.0.1:
+    resolution: {integrity: sha512-oIXISMynqSqm241k6kcQ5UwttDILMK4BiurCfGEREw6+X9jkkpEe5T9FZaApyLGGOnFuyMWZpdolTXMtvEJ08Q==}
+    engines: {node: '>=18'}
+
   cookie@1.0.2:
     resolution: {integrity: sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==}
     engines: {node: '>=18'}
@@ -2845,10 +2871,6 @@ packages:
 
   dotenv@16.6.1:
     resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
-    engines: {node: '>=12'}
-
-  dotenv@17.3.1:
-    resolution: {integrity: sha512-IO8C/dzEb6O3F9/twg6ZLXz164a2fhTnEWb95H23Dm4OuN+92NmEAlTrupP9VW6Jm3sO26tQlqyvyi4CsnY9GA==}
     engines: {node: '>=12'}
 
   draco3d@1.5.7:
@@ -3362,6 +3384,10 @@ packages:
     resolution: {integrity: sha512-2Nim7dha1KVkaiF4q6Dj+ngPPMdfvLJEOpZk/jKiUAkqKebpGAWQXAq9z1xu9HKu5lWfqw/FASuccEjyznjPaA==}
     engines: {node: 20 || >=22}
     hasBin: true
+
+  glob@13.0.6:
+    resolution: {integrity: sha512-Wjlyrolmm8uDpm/ogGyXZXb1Z+Ca2B8NbJwqBVg0axK9GbBeoS7yGV6vjXnYdGm6X53iehEuxxbyiKp8QmN4Vw==}
+    engines: {node: 18 || 20 || >=22}
 
   glob@7.2.3:
     resolution: {integrity: sha512-nFR0zLpU2YCaRxwoCJvL6UvCH2JFyFVIvwTLsIf21AuHlMskA1hhTdk+LlYJtOlYt9v6dvszD2BGRqBL+iQK9Q==}
@@ -4012,6 +4038,10 @@ packages:
     resolution: {integrity: sha512-IPZ167aShDZZUMdRk66cyQAW3qr0WzbHkPdMYa8bzZhlHhO3jALbKdxcaak7W9FfT2rZNpQuUu4Od7ILEpXSaw==}
     engines: {node: 20 || >=22}
 
+  minimatch@10.2.4:
+    resolution: {integrity: sha512-oRjTw/97aTBN0RHbYCdtF1MQfvusSIBQM0IZEgzl6426+8jSC0nF1a/GmnVLpfB9yyr6g6FTqWqiZVbxrtaCIg==}
+    engines: {node: 18 || 20 || >=22}
+
   minimatch@3.1.2:
     resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
 
@@ -4067,6 +4097,10 @@ packages:
 
   minipass@7.1.2:
     resolution: {integrity: sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==}
+    engines: {node: '>=16 || 14 >=14.17'}
+
+  minipass@7.1.3:
+    resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
 
   minizlib@2.1.2:
@@ -4364,6 +4398,10 @@ packages:
   path-scurry@2.0.0:
     resolution: {integrity: sha512-ypGJsmGtdXUOeM5u93TyeIEfEhM6s+ljAhrk5vAvSx8uyY/02OvrZnA0YNGUrPXfpJMgI1ODd3nwz8Npx4O4cg==}
     engines: {node: 20 || >=22}
+
+  path-scurry@2.0.2:
+    resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
+    engines: {node: 18 || 20 || >=22}
 
   path-type@4.0.0:
     resolution: {integrity: sha512-gDKb8aZMDeD/tZWs9P6+q0J9Mwkdl6xMV8TjnGP3qJVJ06bdMgkbBlLU8IdfOsIsFz2BW1rNVT3XuNEl8zPAvw==}
@@ -6119,6 +6157,16 @@ snapshots:
       '@bull-board/ui': 6.14.0
       redis-info: 3.1.0
 
+  '@bull-board/api@6.20.6(@bull-board/ui@6.14.0)':
+    dependencies:
+      '@bull-board/ui': 6.14.0
+      redis-info: 3.1.0
+
+  '@bull-board/api@6.20.6(@bull-board/ui@6.20.6)':
+    dependencies:
+      '@bull-board/ui': 6.20.6
+      redis-info: 3.1.0
+
   '@bull-board/fastify@6.14.0':
     dependencies:
       '@bull-board/api': 6.14.0(@bull-board/ui@6.14.0)
@@ -6127,9 +6175,21 @@ snapshots:
       '@fastify/view': 11.1.1
       ejs: 3.1.10
 
+  '@bull-board/fastify@6.20.6':
+    dependencies:
+      '@bull-board/api': 6.20.6(@bull-board/ui@6.20.6)
+      '@bull-board/ui': 6.20.6
+      '@fastify/static': 9.0.0
+      '@fastify/view': 11.1.1
+      ejs: 3.1.10
+
   '@bull-board/ui@6.14.0':
     dependencies:
       '@bull-board/api': 6.14.0(@bull-board/ui@6.14.0)
+
+  '@bull-board/ui@6.20.6':
+    dependencies:
+      '@bull-board/api': 6.20.6(@bull-board/ui@6.20.6)
 
   '@cacheable/utils@2.1.0':
     dependencies:
@@ -6181,15 +6241,6 @@ snapshots:
 
   '@chevrotain/utils@10.4.2': {}
 
-  '@clack/core@1.1.0':
-    dependencies:
-      sisteransi: 1.0.5
-
-  '@clack/prompts@1.1.0':
-    dependencies:
-      '@clack/core': 1.1.0
-      sisteransi: 1.0.5
-
   '@colors/colors@1.6.0': {}
 
   '@csi-foxbyte/cityjson-to-3d-tiles@0.0.18(jiti@2.6.1)(yaml@2.8.1)':
@@ -6237,20 +6288,27 @@ snapshots:
       - supports-color
       - yaml
 
-  '@csi-foxbyte/fastify-toab@0.2.0-rc.1':
+  '@csi-foxbyte/fastify-toab@0.2.0-rc.3(@bull-board/ui@6.14.0)':
     dependencies:
-      '@clack/prompts': 1.1.0
+      '@bull-board/api': 6.20.6(@bull-board/ui@6.14.0)
+      '@bull-board/fastify': 6.20.6
+      '@fastify/cors': 11.2.0
+      '@fastify/helmet': 13.0.2
+      '@fastify/multipart': 9.4.0
+      '@fastify/rate-limit': 10.3.0
+      '@fastify/swagger': 9.5.2
+      '@fastify/swagger-ui': 5.2.3
+      '@fastify/under-pressure': 9.0.3
       '@sinclair/typebox': 0.34.41
       bullmq: 5.61.0
-      dotenv: 17.3.1
-      fast-glob: 3.3.3
       fastify: 5.6.1
       jiti: 2.6.1
-      picocolors: 1.1.1
       pino: 10.3.1
       pino-pretty: 13.1.3
       rolldown: 1.0.0-rc.9
+      typescript: 5.9.3
     transitivePeerDependencies:
+      - '@bull-board/ui'
       - supports-color
 
   '@csi-foxbyte/mesh-dem-to-terrain@0.0.4':
@@ -6460,6 +6518,11 @@ snapshots:
       fastify-plugin: 5.1.0
       toad-cache: 3.7.0
 
+  '@fastify/cors@11.2.0':
+    dependencies:
+      fastify-plugin: 5.1.0
+      toad-cache: 3.7.0
+
   '@fastify/deepmerge@3.1.0': {}
 
   '@fastify/error@4.2.0': {}
@@ -6480,6 +6543,14 @@ snapshots:
       dequal: 2.0.3
 
   '@fastify/multipart@9.2.1':
+    dependencies:
+      '@fastify/busboy': 3.2.0
+      '@fastify/deepmerge': 3.1.0
+      '@fastify/error': 4.2.0
+      fastify-plugin: 5.1.0
+      secure-json-parse: 4.1.0
+
+  '@fastify/multipart@9.4.0':
     dependencies:
       '@fastify/busboy': 3.2.0
       '@fastify/deepmerge': 3.1.0
@@ -6529,6 +6600,15 @@ snapshots:
       fastify-plugin: 5.1.0
       fastq: 1.19.1
       glob: 11.0.3
+
+  '@fastify/static@9.0.0':
+    dependencies:
+      '@fastify/accept-negotiator': 2.0.1
+      '@fastify/send': 4.1.0
+      content-disposition: 1.0.1
+      fastify-plugin: 5.1.0
+      fastq: 1.19.1
+      glob: 13.0.6
 
   '@fastify/swagger-ui@5.2.3':
     dependencies:
@@ -8295,6 +8375,8 @@ snapshots:
 
   balanced-match@1.0.2: {}
 
+  balanced-match@4.0.4: {}
+
   bare-events@2.8.1: {}
 
   bare-fs@4.5.0:
@@ -8369,6 +8451,10 @@ snapshots:
   brace-expansion@2.0.2:
     dependencies:
       balanced-match: 1.0.2
+
+  brace-expansion@5.0.4:
+    dependencies:
+      balanced-match: 4.0.4
 
   braces@3.0.3:
     dependencies:
@@ -8672,6 +8758,8 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
+  content-disposition@1.0.1: {}
+
   cookie@1.0.2: {}
 
   copy-anything@3.0.5:
@@ -8812,8 +8900,6 @@ snapshots:
       tslib: 2.8.1
 
   dotenv@16.6.1: {}
-
-  dotenv@17.3.1: {}
 
   draco3d@1.5.7: {}
 
@@ -9568,6 +9654,12 @@ snapshots:
       package-json-from-dist: 1.0.1
       path-scurry: 2.0.0
 
+  glob@13.0.6:
+    dependencies:
+      minimatch: 10.2.4
+      minipass: 7.1.3
+      path-scurry: 2.0.2
+
   glob@7.2.3:
     dependencies:
       fs.realpath: 1.0.0
@@ -10232,6 +10324,10 @@ snapshots:
     dependencies:
       '@isaacs/brace-expansion': 5.0.0
 
+  minimatch@10.2.4:
+    dependencies:
+      brace-expansion: 5.0.4
+
   minimatch@3.1.2:
     dependencies:
       brace-expansion: 1.1.12
@@ -10295,6 +10391,8 @@ snapshots:
   minipass@5.0.0: {}
 
   minipass@7.1.2: {}
+
+  minipass@7.1.3: {}
 
   minizlib@2.1.2:
     dependencies:
@@ -10648,6 +10746,11 @@ snapshots:
     dependencies:
       lru-cache: 11.2.2
       minipass: 7.1.2
+
+  path-scurry@2.0.2:
+    dependencies:
+      lru-cache: 11.2.2
+      minipass: 7.1.3
 
   path-type@4.0.0: {}
 

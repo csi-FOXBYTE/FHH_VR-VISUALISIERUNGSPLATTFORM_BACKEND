@@ -6,7 +6,7 @@ import {
 import { JWTPayload, jwtVerify, SignJWT } from "jose";
 
 const tokenService = createService("token", async () => {
-  const secret = new TextEncoder().encode(process.env.AUTH_SECRET!);
+  const secret = new TextEncoder().encode(process.env.AUTH_SECRET);
 
   return {
     async createToken<T extends JWTPayload>(

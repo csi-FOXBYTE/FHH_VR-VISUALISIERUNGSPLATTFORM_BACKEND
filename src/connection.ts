@@ -32,7 +32,7 @@ export function parseRedisConnectionString(uri: string) {
 }
 
 const connectionOptions = parseRedisConnectionString(
-  process.env.REDIS_CONNECTION_STRING ?? "",
+  process.env.REDIS_CONNECTION_STRING,
 );
 
 function createConnection() {
@@ -50,8 +50,8 @@ function createConnection() {
           password: connectionOptions.password,
           tls: connectionOptions.tls
             ? {
-                servername: connectionOptions.host,
-              }
+              servername: connectionOptions.host,
+            }
             : undefined,
         },
         ...connectionOptions.options,

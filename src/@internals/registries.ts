@@ -73,15 +73,18 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   serviceRegistry.register(user_user$service);
 
   workerRegistry = new WorkerRegistry(serviceRegistry);
-  await workerRegistry.register(blobStorage_workers_deleteBlob$worker, dontInitializeWorkers);
-  await workerRegistry.register(converter3D_workers_convert3DTiles$worker, dontInitializeWorkers);
-  await workerRegistry.register(converter3D_workers_convertProjectModel$worker, dontInitializeWorkers);
-  await workerRegistry.register(converter3D_workers_convertTerrain$worker, dontInitializeWorkers);
-  await workerRegistry.register(converter3D_workers_convertWMSWMTS$worker, dontInitializeWorkers);
-  await workerRegistry.register(converter3D_workers_updateConverterWorkerConfigurations$worker, dontInitializeWorkers);
-  await workerRegistry.register(events_workers_removeOldEvents$worker, dontInitializeWorkers);
-  await workerRegistry.register(test_workers_helloWorld$worker, dontInitializeWorkers);
-  await workerRegistry.register(user_workers_deleteInactiveUsers$worker, dontInitializeWorkers);
+  if (!dontInitializeWorkers) {
+   await workerRegistry.register(blobStorage_workers_deleteBlob$worker, dontInitializeWorkers);
+   await workerRegistry.register(converter3D_workers_convert3DTiles$worker, dontInitializeWorkers);
+   await workerRegistry.register(converter3D_workers_convertProjectModel$worker, dontInitializeWorkers);
+   await workerRegistry.register(converter3D_workers_convertTerrain$worker, dontInitializeWorkers);
+   await workerRegistry.register(converter3D_workers_convertWMSWMTS$worker, dontInitializeWorkers);
+   await workerRegistry.register(converter3D_workers_updateConverterWorkerConfigurations$worker, dontInitializeWorkers);
+   await workerRegistry.register(events_workers_removeOldEvents$worker, dontInitializeWorkers);
+   await workerRegistry.register(test_workers_helloWorld$worker, dontInitializeWorkers);
+   await workerRegistry.register(user_workers_deleteInactiveUsers$worker, dontInitializeWorkers);
+  };
+
   workerRegistryRef.current = workerRegistry;
 
   await workerRegistry.resumeQueues();

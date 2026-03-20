@@ -73,6 +73,7 @@ eventsController
 
 eventsController
   .addRoute("PATCH", "/:id")
+  .params(Type.Object({ id: Type.String() }))
   .body(eventsUpdateRequestDTO)
   .handler(async ({ services, body }) => {
     const eventsService = await getEventsService(services);

@@ -1,21 +1,23 @@
-import fastifySwagger from "@fastify/swagger";
-import { createMiddleware, defineConfig, definePlugin } from "@csi-foxbyte/fastify-toab";
-import fastifySwaggerUi from "@fastify/swagger-ui";
-import { createBullBoard } from "@bull-board/api";
-import { BullMQAdapter } from "@bull-board/api/bullMQAdapter";
-import { FastifyAdapter } from "@bull-board/fastify";
-import fastifyCors from "@fastify/cors";
-import fastifyHelmet from "@fastify/helmet";
-import fastifyMultipart from "@fastify/multipart";
+import { defineConfig } from "@csi-foxbyte/fastify-toab";
 import { FastifyOtelInstrumentation } from "@fastify/otel";
-import fastifyRateLimit from "@fastify/rate-limit";
-import fastifyUnderPressure from "@fastify/under-pressure";
 import json from "./package.json" with { type: "json" };
 import { globalOrderMiddleware } from "./src/globalMiddlewares/middleWare.js";
+import { Type } from "@sinclair/typebox";
 
 export default defineConfig({
-  plugins: [
-    definePlugin(fastifySwagger, {
+  env: Type.Object({
+    PORT: Type.String(),
+    APPLICATIONINSIGHTS_CONNECTION_STRING: Type.Optional(Type.String()),
+    REDIS_CONNECTION_STRING: Type.String(),
+    REDIS_IS_CLUSTER: Type.Optional(Type.String()),
+    AUTH_SECRET: Type.String(),
+    AZURE_STORAGE_CONNECTION_STRING: Type.String(),
+    WORKER_DISABLED: Type.Optional(Type.String()),
+    DATABASE_URL: Type.String(),
+  }),
+  fastify: ({ isDev }) => ({
+    swagger: {
+      enabled: true,
       openapi: {
         openapi: "3.0.0",
         info: {
@@ -40,8 +42,9 @@ export default defineConfig({
         },
         security: [],
       },
-    }),
-    definePlugin(fastifySwaggerUi, {
+    },
+    swaggerUi: {
+      enabled: true,
       routePrefix: "/docs",
       uiConfig: {
         docExpansion: "list",
@@ -49,27 +52,27 @@ export default defineConfig({
       },
       staticCSP: true,
       transformSpecificationClone: true,
-    }),
-    definePlugin(fastifyHelmet, {}),
-    definePlugin(fastifyRateLimit, {
+    },
+    rateLimit: {
+      enabled: true,
       max: 500,
       timeWindow: "1 minute",
-    }),
-    definePlugin(fastifyUnderPressure, {}),
-    definePlugin(fastifyCors, {}),
-    definePlugin(fastifyMultipart, {
+    },
+    multipart: {
+      enabled: true,
       limits: {
         fileSize: 16_000_000, // 16 mb
         files: 10,
       },
-    }),
-  ],
+    },
+    bullBoard: {
+      enabled: isDev,
+    }
+  }),
+  server: { disableWorkers: true },
   rootDir: "src",
   globalMiddlewares: [globalOrderMiddleware],
-  onReady: async (fastify) => {
-    fastify.swagger();
-  },
-  onPreStart: async (fastify, registries) => {
+  onPreStart: async (fastify) => {
     const fastifyOtel = new FastifyOtelInstrumentation();
 
     await fastify.register(fastifyOtel.plugin(), {
@@ -95,20 +98,5 @@ export default defineConfig({
         return done(null, body); // raw Buffer
       },
     );
-
-    const serverAdapter = new FastifyAdapter();
-
-    createBullBoard({
-      //@ts-expect-error wrong types here
-      queues: Array.from(registries.workerRegistry.queues.values()).map(
-        // @ts-expect-error
-        (queue) => new BullMQAdapter(queue),
-      ),
-      serverAdapter,
-    });
-
-    serverAdapter.setBasePath("/bullMQ");
-
-    fastify.register(serverAdapter.registerPlugin(), { prefix: "/bullMQ" });
   },
 });
