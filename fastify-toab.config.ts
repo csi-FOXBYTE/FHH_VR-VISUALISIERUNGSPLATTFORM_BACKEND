@@ -69,7 +69,7 @@ export default defineConfig({
       enabled: isDev,
     }
   }),
-  server: { disableWorkers: true },
+  server: { disableWorkers: false },
   rootDir: "src",
   globalMiddlewares: [globalOrderMiddleware],
   onPreStart: async (fastify) => {
