@@ -39,9 +39,11 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.
 https://download.docker.com/linux/debian ${CODENAME} stable" \
   | $SUDO tee /etc/apt/sources.list.d/docker.list >/dev/null
 
-# Install Docker CLI
+# Install Docker CLI and Buildx after adding Docker's package repository
 $SUDO apt-get update -y
-$SUDO apt-get install -y --no-install-recommends docker-ce-cli
+$SUDO apt-get install -y --no-install-recommends \
+  docker-ce-cli \
+  docker-buildx-plugin
 
 # Optional cleanup to keep the image slim
 $SUDO rm -rf /var/lib/apt/lists/*

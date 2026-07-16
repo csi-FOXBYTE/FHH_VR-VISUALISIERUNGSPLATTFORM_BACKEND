@@ -93,6 +93,10 @@ COPY --from=build --chown=nodeuser:nodejs /app/python ./python
 # Falls du einen lokalen bin-Ordner hast (ohne führenden Slash!):
 COPY --from=build --chown=nodeuser:nodejs /app/bin ./bin
 
+# Keep the Linux CityGML wrapper executable and resilient to Windows checkouts.
+RUN sed -i 's/\r$//' /app/bin/citygml-tools-2.4.0/citygml-tools \
+ && chmod +x /app/bin/citygml-tools-2.4.0/citygml-tools
+
 # Berechtigungen für die venv an den user übertragen
 RUN chown -R nodeuser:nodejs /app/.venv
 

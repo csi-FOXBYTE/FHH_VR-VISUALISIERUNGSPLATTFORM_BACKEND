@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   python3 python3-pip python3-venv python3-gdal \
   make g++ \
   openjdk-17-jdk-headless \
-  docker-buildx-plugin \
   && rm -rf /var/lib/apt/lists/*
 
 
@@ -29,4 +28,3 @@ RUN python3 -m venv --system-site-packages /workspace/.venv
 ENV PATH="/workspace/.venv/bin:$PATH"
 COPY requirements.txt /tmp/requirements.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
-

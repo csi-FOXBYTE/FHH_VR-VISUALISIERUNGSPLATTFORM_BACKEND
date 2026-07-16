@@ -3,3 +3,7 @@ bin/ifcConvert/ifc-mac-m1-x64 filter=lfs diff=lfs merge=lfs -text
 bin/ifcConvert/ifc-mac-x64 filter=lfs diff=lfs merge=lfs -text
 bin/ifcConvert/ifc-win-x64.exe filter=lfs diff=lfs merge=lfs -text
 *.jar filter=lfs diff=lfs merge=lfs -text
+
+# Linux wrapper scripts must stay LF in every checkout/build context.
+bin/citygml-tools-2.4.0/citygml-tools text eol=lf
+*.sh text eol=lf
