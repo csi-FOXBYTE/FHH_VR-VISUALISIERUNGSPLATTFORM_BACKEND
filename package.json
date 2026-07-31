@@ -11,7 +11,7 @@
     "dev": "fastify-toab dev",
     "build": "fastify-toab build",
     "start": "node .build/@internals/run.js",
-    "publish:docker": "docker build -t fhhvr-webbackend:0.2.14 . && docker tag fhhvr-webbackend:0.2.14 foxbytecsi/fhhvr-webbackend:0.2.14 && docker push foxbytecsi/fhhvr-webbackend:0.2.14"
+    "publish:docker": "docker build -t fhhvr-webbackend:0.2.15 . && docker tag fhhvr-webbackend:0.2.15 foxbytecsi/fhhvr-webbackend:0.2.15 && docker push foxbytecsi/fhhvr-webbackend:0.2.15"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
