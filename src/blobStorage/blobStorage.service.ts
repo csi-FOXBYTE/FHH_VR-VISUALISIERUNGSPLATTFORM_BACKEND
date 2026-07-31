@@ -14,8 +14,6 @@ import { getBlobStorageDeleteBlobWorkerQueue, getTokenService } from "../@intern
 const blobStorageService = createService(
   "blobStorage",
   async ({ queues, services }) => {
-    const deleteBlobQueue = getBlobStorageDeleteBlobWorkerQueue(queues);
-
     const tokenService = await getTokenService(services);
 
     async function deleteLater(
@@ -23,6 +21,11 @@ const blobStorageService = createService(
       blobName: string,
       delayMs: number
     ) {
+      // Sandboxed converter processes intentionally initialize services without
+      // worker queues. Resolve this queue only in the API/worker process that
+      // actually schedules deferred deletion.
+      const deleteBlobQueue = getBlobStorageDeleteBlobWorkerQueue(queues);
+
       await deleteBlobQueue.add(
         `${containerName}/${blobName}`,
         { blobName, containerName },

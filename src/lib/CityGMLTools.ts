@@ -13,15 +13,15 @@ export async function cityGMLToCityJSON(folder: string) {
   switch (platform) {
     case "win32":
       path = join(
-        import.meta.dirname,
-        "../../bin/citygml-tools-2.4.0/citygml-tools.bat"
+        process.cwd(),
+        "bin/citygml-tools-2.4.0/citygml-tools.bat"
       );
       break;
     case "linux":
     case "darwin":
       path = join(
-        import.meta.dirname,
-        "../../bin/citygml-tools-2.4.0/citygml-tools"
+        process.cwd(),
+        "bin/citygml-tools-2.4.0/citygml-tools"
       );
       break;
     default:

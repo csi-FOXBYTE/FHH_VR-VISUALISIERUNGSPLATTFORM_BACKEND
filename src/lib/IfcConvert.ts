@@ -39,25 +39,25 @@ export async function convertIfcBuffer(
     switch (platform) {
       case "win32":
         path = join(
-          import.meta.dirname,
-          "../../bin/ifcConvert/ifc-win-x64.exe"
+          process.cwd(),
+          "bin/ifcConvert/ifc-win-x64.exe"
         );
         break;
       case "linux":
-        path = join(import.meta.dirname, "../../bin/ifcConvert/ifc-lin-x64");
+        path = join(process.cwd(), "bin/ifcConvert/ifc-lin-x64");
         break;
       case "darwin":
         switch (arch) {
           case "x64":
             path = join(
-              import.meta.dirname,
-              "../../bin/ifcConvert/ifc-mac-x64"
+              process.cwd(),
+              "bin/ifcConvert/ifc-mac-x64"
             );
             break;
           case "arm64":
             path = join(
-              import.meta.dirname,
-              "../../bin/ifcConvert/ifc-mac-m1-x64"
+              process.cwd(),
+              "bin/ifcConvert/ifc-mac-m1-x64"
             );
             break;
         }

@@ -7,13 +7,13 @@ import {
   ServiceRegistry,
   WorkerRegistry,
 } from "@csi-foxbyte/fastify-toab";
-import appDownload_appDownload$service from "../appDownload/appDownload.service.js";
 import auth_auth$service from "../auth/auth.service.js";
-import baseLayer_baseLayer$service from "../baseLayer/baseLayer.service.js";
+import appDownload_appDownload$service from "../appDownload/appDownload.service.js";
 import blobStorage_blobStorage$service from "../blobStorage/blobStorage.service.js";
+import baseLayer_baseLayer$service from "../baseLayer/baseLayer.service.js";
 import cache_cache$service from "../cache/cache.service.js";
-import configuration_configuration$service from "../configuration/configuration.service.js";
 import converter3D_converter3D$service from "../converter3D/converter3D.service.js";
+import configuration_configuration$service from "../configuration/configuration.service.js";
 import db_db$service from "../db/db.service.js";
 import email_email$service from "../email/email.service.js";
 import events_events$service from "../events/events.service.js";
@@ -31,7 +31,6 @@ import converter3D_workers_convertTerrain$worker from "../converter3D/workers/co
 import converter3D_workers_convertWMSWMTS$worker from "../converter3D/workers/convertWMSWMTS.worker.js";
 import converter3D_workers_updateConverterWorkerConfigurations$worker from "../converter3D/workers/updateConverterWorkerConfigurations.worker.js";
 import events_workers_removeOldEvents$worker from "../events/workers/removeOldEvents.worker.js";
-import test_workers_helloWorld$worker from "../test/workers/helloWorld.worker.js";
 import user_workers_deleteInactiveUsers$worker from "../user/workers/deleteInactiveUsers.worker.js";
 import appDownload_appDownload$controller from "../appDownload/appDownload.controller.js";
 import baseLayer_baseLayer$controller from "../baseLayer/baseLayer.controller.js";
@@ -54,13 +53,13 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
   };
 
   serviceRegistry = new ServiceRegistry(workerRegistryRef);
-  serviceRegistry.register(appDownload_appDownload$service);
   serviceRegistry.register(auth_auth$service);
-  serviceRegistry.register(baseLayer_baseLayer$service);
+  serviceRegistry.register(appDownload_appDownload$service);
   serviceRegistry.register(blobStorage_blobStorage$service);
+  serviceRegistry.register(baseLayer_baseLayer$service);
   serviceRegistry.register(cache_cache$service);
-  serviceRegistry.register(configuration_configuration$service);
   serviceRegistry.register(converter3D_converter3D$service);
+  serviceRegistry.register(configuration_configuration$service);
   serviceRegistry.register(db_db$service);
   serviceRegistry.register(email_email$service);
   serviceRegistry.register(events_events$service);
@@ -81,7 +80,6 @@ export async function getRegistries(dontInitializeWorkers?: boolean) {
    await workerRegistry.register(converter3D_workers_convertWMSWMTS$worker, dontInitializeWorkers);
    await workerRegistry.register(converter3D_workers_updateConverterWorkerConfigurations$worker, dontInitializeWorkers);
    await workerRegistry.register(events_workers_removeOldEvents$worker, dontInitializeWorkers);
-   await workerRegistry.register(test_workers_helloWorld$worker, dontInitializeWorkers);
    await workerRegistry.register(user_workers_deleteInactiveUsers$worker, dontInitializeWorkers);
   };
 

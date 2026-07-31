@@ -9,9 +9,10 @@ services:
       - ..:/workspace
     command: sleep infinity
     ports:
-      - 3001:3001
+      - 3001:3000
     environment:
       NODE_ENV: development
+      PORT: "3000"
     networks:
       - fhh-vrvis-net
 

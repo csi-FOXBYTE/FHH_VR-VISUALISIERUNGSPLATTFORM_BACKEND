@@ -1,10 +1,38 @@
-import { defineConfig } from "@csi-foxbyte/fastify-toab";
+import {
+  defineConfig,
+  type FastifyToabConfigOptions,
+} from "@csi-foxbyte/fastify-toab";
 import { FastifyOtelInstrumentation } from "@fastify/otel";
 import json from "./package.json" with { type: "json" };
 import { globalOrderMiddleware } from "./src/globalMiddlewares/middleWare.js";
 import { Type } from "@sinclair/typebox";
+import type { FastifyInstance } from "fastify";
+
+const server: NonNullable<FastifyToabConfigOptions["server"]> = {
+  fastify: {
+    listen: {
+      host: "0.0.0.0",
+      port: 3000,
+    },
+  },
+  disableWorkers: process.env.WORKER_DISABLED === "true",
+};
+
+export const rolldown: NonNullable<FastifyToabConfigOptions["rolldown"]> = {
+  external: [
+    "sharp",
+    "sqlite3",
+    "gdal-async",
+    "@csi-foxbyte/cityjson-to-3d-tiles",
+    "@csi-foxbyte/mesh-dem-to-terrain",
+    "7zip-min",
+    "assimpjs",
+    "draco3dgltf",
+  ],
+};
 
 export default defineConfig({
+  rolldown,
   env: Type.Object({
     PORT: Type.String(),
     APPLICATIONINSIGHTS_CONNECTION_STRING: Type.Optional(Type.String()),
@@ -27,8 +55,8 @@ export default defineConfig({
         },
         servers: [
           {
-            url: "http://localhost:5000",
-            description: "Development server",
+            url: "/",
+            description: "Current server",
           },
         ],
         components: {
@@ -69,10 +97,12 @@ export default defineConfig({
       enabled: isDev,
     }
   }),
-  server: { disableWorkers: false },
+  server,
   rootDir: "src",
   globalMiddlewares: [globalOrderMiddleware],
-  onPreStart: async (fastify) => {
+  onPreStart: async (fastify: FastifyInstance): Promise<void> => {
+    fastify.get("/ping", async () => "OK");
+
     const fastifyOtel = new FastifyOtelInstrumentation();
 
     await fastify.register(fastifyOtel.plugin(), {
