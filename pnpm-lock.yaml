@@ -24,8 +24,8 @@ importers:
         specifier: ^6.11.0
         version: 6.14.0
       '@csi-foxbyte/cityjson-to-3d-tiles':
-        specifier: 0.0.18
-        version: 0.0.18(jiti@2.6.1)(yaml@2.8.1)
+        specifier: 0.0.24
+        version: 0.0.24(jiti@2.6.1)(yaml@2.8.1)
       '@csi-foxbyte/fastify-toab':
         specifier: 0.2.0-rc.3
         version: 0.2.0-rc.3(@bull-board/ui@6.20.6)
@@ -521,8 +521,8 @@ packages:
     resolution: {integrity: sha512-Ir+AOibqzrIsL6ajt3Rz3LskB7OiMVHqltZmspbW/TJuTVuyOMirVqAkjfY6JISiLHgyNqicAC8AyHHGzNd/dA==}
     engines: {node: '>=0.1.90'}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.18':
-    resolution: {integrity: sha512-fPR0Oi4WxMBWFJjfCFeN6P2i92BLExeRcbzFQ6WF9YAM/cdHAwkpdYzbLKW5wgEtdjIAqFxSlP7ilAcY1pZbxQ==}
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.24':
+    resolution: {integrity: sha512-ZldCe/IIbzpbQCJkj169wzyQ6tZMbKerTyS+v6cVfwWfFJnQ8fKR0JsDPEXlZQVyrKBsC141I0DZSTmtDA2rwQ==}
 
   '@csi-foxbyte/fastify-toab@0.2.0-rc.3':
     resolution: {integrity: sha512-Y8/+LO3E1m6xx6NY6PaVhFlRN5Touqm8x1rxrGGSiBZ9tHCzk1xsYJk0qdI/aAKnUcVwhtgoqb6lT8DICAup3g==}
@@ -2088,6 +2088,9 @@ packages:
   '@types/cli-progress@3.11.6':
     resolution: {integrity: sha512-cE3+jb9WRlu+uOSAugewNpITJDt1VF8dHOopPO4IABFc3SXYL5WE/+PTz/FCdZRRfIujiWW3n3aMbv1eIGVRWA==}
 
+  '@types/color-rgba@2.1.3':
+    resolution: {integrity: sha512-JOqpRixFF2D9Uy9osxJxzUP3lmdQdp7rpj4eMz0mYcZH2yhHwyyY4nMdYumCYWJT0ygLC/kMlkQW5LPZB2cTQw==}
+
   '@types/delaunator@5.0.3':
     resolution: {integrity: sha512-6tTLP8NX0OwtB/fmW9bXp4EWPptawTSsrSGjboWRuzqkxNEEJGyzRPHbr8wnV2DBWfAZ+EPTOvW3B/KysJrl2g==}
 
@@ -2650,6 +2653,21 @@ packages:
 
   color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  color-name@2.1.1:
+    resolution: {integrity: sha512-p2FdgwVx1a9yWBHP2wI0VgShkDpgN4kZISkxdNipGBJWpa5G6b04OINlVWCyJj0JmfvcPrgqt95E9k8yvaOJFg==}
+    engines: {node: '>=12.20'}
+
+  color-parse@2.1.2:
+    resolution: {integrity: sha512-z0f1xKxh4za/RSprsmxNkFcyO2o/4VJ2QxiiRRIjfqAsqOXys+BvpOCINNAKOX9AQ/alpS03Wc0WMtEmtLmHzw==}
+
+  color-rgba@3.1.1:
+    resolution: {integrity: sha512-6ySZmGOO/AkJCgJhndFAUc5VwGLWJrNWfwJurIgJ9CCov2Z+A6XSoYMYKVjGEst1ByyD9rKuDJizcCaMNL5TpQ==}
+
+  color-space@3.1.0:
+    resolution: {integrity: sha512-dkzBjMZUUxjtmZbqEOFtmY9qo4lxA6zG4nMtvC/GDH3BasLtrqVqMhw9TRJ72gta0vyzm03+7pqzV6f17gI6HA==}
+    engines: {node: '>=20.10'}
+    hasBin: true
 
   color-string@1.9.1:
     resolution: {integrity: sha512-shrVawQFojnZv6xM40anx4CkoDP+fZsw/ZerEMsW/pyzsRbElpsL/DBVW7q3ExxwusdNXI3lXpuhEZkzs8p5Eg==}
@@ -6237,7 +6255,7 @@ snapshots:
 
   '@colors/colors@1.6.0': {}
 
-  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.18(jiti@2.6.1)(yaml@2.8.1)':
+  '@csi-foxbyte/cityjson-to-3d-tiles@0.0.24(jiti@2.6.1)(yaml@2.8.1)':
     dependencies:
       3d-tiles-tools: 0.5.1
       '@gltf-transform/core': 4.2.1
@@ -6246,12 +6264,14 @@ snapshots:
       '@gpu-tex-enc/basis': 1.16.4
       '@supercharge/promise-pool': 3.2.0
       '@types/async': 3.2.25
+      '@types/color-rgba': 2.1.3
       '@types/earcut': 3.0.0
       '@types/lodash': 4.17.20
       '@types/node': 24.9.1
       '@types/three': 0.178.1
       async: 3.2.6
       cesium: 1.134.1
+      color-rgba: 3.1.1
       draco3dgltf: 1.5.7
       earcut: 3.0.2
       eigen: 0.2.2
@@ -7996,6 +8016,8 @@ snapshots:
     dependencies:
       '@types/node': 22.18.12
 
+  '@types/color-rgba@2.1.3': {}
+
   '@types/delaunator@5.0.3': {}
 
   '@types/earcut@3.0.0': {}
@@ -8689,6 +8711,19 @@ snapshots:
       color-name: 1.1.4
 
   color-name@1.1.4: {}
+
+  color-name@2.1.1: {}
+
+  color-parse@2.1.2:
+    dependencies:
+      color-name: 2.1.1
+
+  color-rgba@3.1.1:
+    dependencies:
+      color-parse: 2.1.2
+      color-space: 3.1.0
+
+  color-space@3.1.0: {}
 
   color-string@1.9.1:
     dependencies:
