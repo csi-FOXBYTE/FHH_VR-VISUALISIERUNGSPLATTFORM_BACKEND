@@ -5,7 +5,7 @@ import {
 } from "@csi-foxbyte/cityjson-to-3d-tiles";
 import "dotenv";
 import { createReadStream } from "fs";
-import { mkdir, readFile, rm } from "fs/promises";
+import { mkdir, readFile, rm, stat } from "fs/promises";
 import _ from "lodash";
 import path from "path";
 import glob from "tiny-glob";
@@ -38,6 +38,8 @@ export default async function run(
     await job.updateProgress(progress);
     job.log(printLogWithDate(JSON.stringify(progress)));
   }, 5_000);
+
+  let sizeBytes = 0;
 
   try {
     const zipPath = path.join(rootPath, job.data.id + ".zip");
@@ -108,6 +110,8 @@ export default async function run(
         path.basename(filePath)
       );
 
+      sizeBytes += buffer.byteLength;
+
       await rm(filePath);
     });
 
@@ -129,7 +133,7 @@ export default async function run(
     );
     job.log(printLogWithDate("Generated 3d tiles from database."));
 
-    if (uploadQueue.length() !== 0) await uploadQueue.drain();
+    if (!uploadQueue.idle()) await uploadQueue.drain();
 
     const files = await glob("./*", {
       filesOnly: true,
@@ -139,13 +143,17 @@ export default async function run(
     let uploadedFiles = 0;
 
     for (const file of files) {
-      const readStream = createReadStream(path.join(tilesPath, file));
+      const filePath = path.join(tilesPath, file);
+      const fileSize = (await stat(filePath)).size;
+      const readStream = createReadStream(filePath);
 
       await blobStorageService.uploadStream(
         readStream,
         `tileset-${job.data.id}`,
         `${file}`
       );
+
+      sizeBytes += fileSize;
 
       uploadedFiles++;
 
@@ -163,6 +171,8 @@ export default async function run(
       await rm(rootPath, { force: true, recursive: true });
       await rm(dbFilePath, { force: true, recursive: true });
     } catch { }
+
+    return { sizeBytes };
   } catch (e) {
     job.log(JSON.stringify(e));
     try {

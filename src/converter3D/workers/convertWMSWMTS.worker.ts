@@ -15,7 +15,7 @@ const convertWMSWMTSWorker = createWorker()
         containerName: string;
         id: string;
       },
-      void
+      { sizeBytes: number }
     >
   >()
   .on("active", async ({ services }, job) => {
@@ -44,10 +44,9 @@ const convertWMSWMTSWorker = createWorker()
     try {
       const converter3DService = await getConverter3DService(services);
 
-      await converter3DService.updateBaseLayerStatus(
+      await converter3DService.completeBaseLayer(
         job.data.id,
-        1,
-        "COMPLETED",
+        job.returnvalue.sizeBytes,
       );
     } catch (e) {
       console.error(e);

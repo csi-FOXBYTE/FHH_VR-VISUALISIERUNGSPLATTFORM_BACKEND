@@ -10,6 +10,7 @@ import {
 import dayjs from "dayjs";
 import { Readable } from "stream";
 import { getBlobStorageDeleteBlobWorkerQueue, getTokenService } from "../@internals/index.js";
+import { calculateContainerSizeBytes } from "./containerSize.js";
 
 const blobStorageService = createService(
   "blobStorage",
@@ -183,6 +184,13 @@ const blobStorageService = createService(
           blobServiceClient.getContainerClient(containerName);
 
         containerClient.deleteIfExists({});
+      },
+
+      async getContainerSizeBytes(containerName: string) {
+        return await calculateContainerSizeBytes(
+          blobServiceClient,
+          containerName,
+        );
       },
 
       async downloadToBuffer(containerName: string, blobName: string) {

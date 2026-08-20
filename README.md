@@ -75,6 +75,7 @@ pnpm dev
 - `pnpm dev`: inkrementeller Build nach `.dev` + Auto-Restart
 - `pnpm build`: Produktionsbuild nach `.build`
 - `pnpm lint`: Oxlint + ESLint
+- `pnpm backfill:base-layer-sizes`: berechnet fehlende Größen abgeschlossener Basisdaten aus Azure-Blob-Metadaten
 - `pnpm zenstack-generate`: generiert `prisma/schema.prisma` aus `zmodel`
 - `pnpm publish:docker`: baut und pusht Image mit aktueller Version
 
@@ -115,7 +116,17 @@ pnpm dev
 3. Registries neu generieren: `pnpm fastify-toab rebuild`
 4. Nur HTTP ohne Worker testen: `WORKER_DISABLED=true`
 
-### 4) Datenzugriff: wann `getDbService` vs. `getPrismaService`
+### 4) Fehlende Basisdatengrößen nachtragen
+
+Nach dem Deployment der Größenberechnung kann der wiederholbar ausführbare Backfill einmalig gestartet werden:
+
+```bash
+pnpm backfill:base-layer-sizes
+```
+
+Benötigt werden `DATABASE_URL` und `AZURE_STORAGE_CONNECTION_STRING`. Verarbeitet werden abgeschlossene, in Azure gespeicherte Basisdaten mit `sizeGB = 0`; externe Ebenen bleiben unverändert.
+
+### 5) Datenzugriff: wann `getDbService` vs. `getPrismaService`
 
 - `getDbService`: wenn ZenStack-Policies (`@allow/@deny`) gelten sollen
 - `getPrismaService`: nur wenn bewusst ohne Policy-Layer gearbeitet wird

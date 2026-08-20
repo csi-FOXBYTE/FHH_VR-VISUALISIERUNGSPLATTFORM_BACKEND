@@ -18,6 +18,7 @@ export default async function run(
 
   const configurationService = await getConfigurationService(services);
   const blobStorageService = await getBlobStorageService(services);
+  let sizeBytes = 0;
 
   const throttledProgress = _.throttle(async (progress: number) => {
     await job.updateProgress(progress);
@@ -48,6 +49,8 @@ export default async function run(
         job.data.containerName,
         `${z}/${x}/${y}`,
       );
+
+      sizeBytes += buffer.byteLength;
 
       await rm(filePath);
     }, 4);
@@ -104,4 +107,6 @@ export default async function run(
   } finally {
     await rmdir(workdir, { recursive: true }); // cleanup
   }
+
+  return { sizeBytes };
 }

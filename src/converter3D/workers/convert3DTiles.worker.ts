@@ -20,7 +20,7 @@ const convert3DTilesWorker = createWorker()
         threadCount: number;
         hasAlphaEnabled: boolean;
       },
-      void
+      { sizeBytes: number }
     >
   >()
   .on("active", async ({ services }, job) => {
@@ -40,7 +40,10 @@ const convert3DTilesWorker = createWorker()
   .on("completed", async ({ services }, job) => {
     const converter3DService = await getConverter3DService(services);
 
-    await converter3DService.updateBaseLayerStatus(job.data.id, 1, "COMPLETED");
+    await converter3DService.completeBaseLayer(
+      job.data.id,
+      job.returnvalue.sizeBytes,
+    );
   })
   .on("failed", async ({ services }, job) => {
     if (!job) return;

@@ -291,6 +291,18 @@ const converter3DService = createService(
           },
         });
       },
+      async completeBaseLayer(id: string, sizeBytes: number) {
+        return await prismaService.baseLayer.update({
+          where: {
+            id,
+          },
+          data: {
+            progress: 1,
+            status: "COMPLETED",
+            sizeGB: sizeBytes / 1_000_000_000,
+          },
+        });
+      },
     };
   },
 );
