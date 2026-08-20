@@ -33,11 +33,7 @@ const projectService = createService(
 
       const allAvailableBaseLayers = await dbService.baseLayer.findMany({
         where: {
-          status: {
-            not: {
-              in: ["PENDING", "FAILED"],
-            },
-          },
+          status: "COMPLETED",
         },
         select: {
           id: true,
