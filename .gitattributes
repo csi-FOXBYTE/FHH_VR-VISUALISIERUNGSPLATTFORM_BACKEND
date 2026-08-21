@@ -7,3 +7,6 @@ bin/ifcConvert/ifc-win-x64.exe filter=lfs diff=lfs merge=lfs -text
 # Linux wrapper scripts must stay LF in every checkout/build context.
 bin/citygml-tools-2.4.0/citygml-tools text eol=lf
 *.sh text eol=lf
+
+# Shared ZenStack sources are compared byte-for-byte across repositories.
+zmodel/*.zmodel text eol=lf
