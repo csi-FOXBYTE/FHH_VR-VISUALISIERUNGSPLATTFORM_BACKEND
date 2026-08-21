@@ -33,6 +33,13 @@ jobs:
       TEST_DATABASE_URL: postgresql://application:application@localhost:5432/application
     steps:
       - uses: actions/checkout@v4
+      - name: Checkout frontend schema copy
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/FHH_VR-VISUALISIERUNGSPLATTFORM_FRONTEND
+          ref: ${{ (github.head_ref || github.ref_name) == 'owner-lifecycle-hardening' && 'owner-lifecycle-hardening' || 'main' }}
+          token: ${{ secrets.SCHEMA_PARITY_TOKEN || github.token }}
+          path: .schema-peer
       - uses: pnpm/action-setup@v4
         with:
           version: 10.20.0
@@ -43,6 +50,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm zenstack-generate
       - run: git diff --exit-code
+      - run: pnpm schema:check-parity
+        env:
+          ZMODEL_PEER_DIR: ${{ github.workspace }}/.schema-peer/zmodel
       - run: pnpm prisma migrate deploy
       - run: pnpm typecheck
       - run: pnpm lint

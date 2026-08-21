@@ -155,8 +155,8 @@ model Authenticator {
 }
 
 model Project {
-  owner                 User?            @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId               String?
+  owner                 User             @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  ownerId               String
   id                    String           @id() @default(cuid())
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt()
@@ -219,8 +219,8 @@ model ProjectModel {
 
 /// Is global per definition, can not be associatd to a project.
 model VisualAxis {
-  owner            User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId          String?
+  owner            User     @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  ownerId          String
   id               String   @id() @default(cuid())
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt()
@@ -318,8 +318,8 @@ model Role {
 }
 
 model BaseLayer {
-  owner                   User?                        @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId                 String?
+  owner                   User                         @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  ownerId                 String
   id                      String                       @id() @default(cuid())
   createdAt               DateTime                     @default(now())
   updatedAt               DateTime                     @updatedAt()
@@ -339,8 +339,8 @@ model BaseLayer {
 }
 
 model Event {
-  owner              User?           @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId            String?
+  owner              User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  ownerId            String
   id                 String          @id() @default(cuid())
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt()

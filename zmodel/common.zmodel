@@ -7,8 +7,8 @@ abstract model Base {
 }
 
 abstract model Ownable {
-  owner   User?   @relation(fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId String?
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  ownerId String
 
   @@allow('all', auth().id == ownerId)
 }

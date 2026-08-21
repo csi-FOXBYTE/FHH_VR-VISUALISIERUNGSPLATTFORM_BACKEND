@@ -58,3 +58,27 @@ pnpm owner:preflight
 Release B changes all four owner relations to `NOT NULL` and `ON DELETE
 RESTRICT`. Its migration repeats the preflight under a database lock and aborts
 without changing the schema if an orphan remains.
+
+After a successful preflight, deploy migration
+`20260821000200_owner_lifecycle_release_b` with:
+
+```sh
+pnpm prisma migrate deploy
+```
+
+The migration locks all affected tables, repeats the null/foreign-reference
+check, and applies all four constraints in one transaction. A failed check
+rolls back the entire migration.
+
+## Schema-copy parity in CI
+
+Both repositories run `pnpm schema:check-parity` against the other repository
+and compare every `.zmodel` file byte for byte. For private repositories, add a
+repository secret named `SCHEMA_PARITY_TOKEN` containing a read-only token with
+contents access to the sibling repository. The workflow falls back to the
+standard GitHub token where cross-repository access is available.
+
+During the owner hardening work, CI compares the two
+`owner-lifecycle-hardening` branches. On `main`, it compares against the sibling
+repository's `main`; a one-sided schema merge therefore fails until both model
+copies are aligned.
