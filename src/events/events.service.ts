@@ -90,6 +90,9 @@ const eventsService = createService(
         attendees: string[];
         moderators: string[];
       }) {
+        const session = await authService.getSession();
+        if (!session) throw new Error("User has no session!");
+
         const createdEvent = await dbService.event.create({
           data: {
             endTime,
@@ -109,7 +112,7 @@ const eventsService = createService(
             },
             owner: {
               connect: {
-                id: (await authService.getSession())?.user.id ?? "-",
+                id: session.user.id,
               },
             },
           },

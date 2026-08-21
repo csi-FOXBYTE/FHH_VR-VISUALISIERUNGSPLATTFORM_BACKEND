@@ -1,4 +1,4 @@
-import { $Enums } from "@prisma/client";
+import { $Enums, Prisma } from "@prisma/client";
 
 export const ownershipEntityTypes = [
   "PROJECT",
@@ -10,6 +10,16 @@ export type OwnershipEntityType = (typeof ownershipEntityTypes)[number];
 export type OwnershipSuccessors = Partial<
   Record<OwnershipEntityType, string>
 >;
+
+export class OwnershipConflictError extends Error {
+  readonly statusCode = 409;
+  readonly code = "OWNERSHIP_CONFLICT";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "OwnershipConflictError";
+  }
+}
 
 export type OwnershipAuditAction =
   | "OWNER_TRANSFER"
@@ -57,6 +67,51 @@ export type OwnershipCountClient = {
   visualAxis: { count: (args: object) => Promise<number> };
   event: { count: (args: object) => Promise<number> };
 };
+
+type OwnershipPreflightRow = {
+  projects: bigint;
+  baseLayers: bigint;
+  visualAxes: bigint;
+  events: bigint;
+  invalidReferences: bigint;
+};
+
+export async function getOwnershipPreflightWithQuery(
+  query: (statement: Prisma.Sql) => Promise<OwnershipPreflightRow[]>,
+) {
+  const rows = await query(Prisma.sql`
+    SELECT
+      (SELECT COUNT(*) FROM "Project" WHERE "ownerId" IS NULL)::bigint AS "projects",
+      (SELECT COUNT(*) FROM "BaseLayer" WHERE "ownerId" IS NULL)::bigint AS "baseLayers",
+      (SELECT COUNT(*) FROM "VisualAxis" WHERE "ownerId" IS NULL)::bigint AS "visualAxes",
+      (SELECT COUNT(*) FROM "Event" WHERE "ownerId" IS NULL)::bigint AS "events",
+      (
+        (SELECT COUNT(*) FROM "Project" p LEFT JOIN "User" u ON u."id" = p."ownerId"
+          WHERE p."ownerId" IS NOT NULL AND u."id" IS NULL) +
+        (SELECT COUNT(*) FROM "BaseLayer" b LEFT JOIN "User" u ON u."id" = b."ownerId"
+          WHERE b."ownerId" IS NOT NULL AND u."id" IS NULL) +
+        (SELECT COUNT(*) FROM "VisualAxis" v LEFT JOIN "User" u ON u."id" = v."ownerId"
+          WHERE v."ownerId" IS NOT NULL AND u."id" IS NULL) +
+        (SELECT COUNT(*) FROM "Event" e LEFT JOIN "User" u ON u."id" = e."ownerId"
+          WHERE e."ownerId" IS NOT NULL AND u."id" IS NULL)
+      )::bigint AS "invalidReferences"
+  `);
+  const row = rows[0];
+  const result = {
+    projects: Number(row?.projects ?? 0),
+    baseLayers: Number(row?.baseLayers ?? 0),
+    visualAxes: Number(row?.visualAxes ?? 0),
+    events: Number(row?.events ?? 0),
+    invalidReferences: Number(row?.invalidReferences ?? 0),
+  };
+  const total =
+    result.projects + result.baseLayers + result.visualAxes + result.events;
+  return {
+    ...result,
+    total,
+    readyForReleaseB: total === 0 && result.invalidReferences === 0,
+  };
+}
 
 export async function getDeletionImpactWithClient(
   client: OwnershipCountClient,

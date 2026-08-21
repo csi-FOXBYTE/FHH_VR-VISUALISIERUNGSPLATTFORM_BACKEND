@@ -2,10 +2,12 @@ import { $Enums } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 import {
   getDeletionImpactWithClient,
+  getOwnershipPreflightWithQuery,
   hasUserAdministratorPermission,
   isEligibleSuccessor,
   missingSuccessorTypes,
   ownershipAuditData,
+  OwnershipConflictError,
 } from "../src/user/ownership.js";
 
 describe("owner lifecycle rules", () => {
@@ -116,5 +118,34 @@ describe("owner lifecycle rules", () => {
     expect(Object.keys(audit)).not.toEqual(
       expect.arrayContaining(["name", "email", "filterValue", "content"]),
     );
+  });
+
+  it("reports the Release B preflight without exposing record data", async () => {
+    const query = vi.fn().mockResolvedValue([
+      {
+        projects: 1n,
+        baseLayers: 2n,
+        visualAxes: 0n,
+        events: 0n,
+        invalidReferences: 1n,
+      },
+    ]);
+
+    await expect(getOwnershipPreflightWithQuery(query)).resolves.toEqual({
+      projects: 1,
+      baseLayers: 2,
+      visualAxes: 0,
+      events: 0,
+      invalidReferences: 1,
+      total: 3,
+      readyForReleaseB: false,
+    });
+    expect(query).toHaveBeenCalledOnce();
+  });
+
+  it("uses HTTP 409 for ownership conflicts", () => {
+    const error = new OwnershipConflictError("transfer required");
+    expect(error.statusCode).toBe(409);
+    expect(error.code).toBe("OWNERSHIP_CONFLICT");
   });
 });

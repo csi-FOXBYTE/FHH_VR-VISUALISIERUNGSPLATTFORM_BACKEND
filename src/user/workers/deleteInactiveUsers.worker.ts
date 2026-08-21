@@ -2,6 +2,7 @@ import { createWorker } from "@csi-foxbyte/fastify-toab";
 import { Job } from "bullmq";
 import { BullMQOtel } from "bullmq-otel";
 import dayjs from "dayjs";
+import { Prisma } from "@prisma/client";
 import defaultConnection from "../../connection.js";
 import { getPrismaService } from "../../@internals/index.js";
 
@@ -32,18 +33,31 @@ const deleteInactiveUsersWorker = createWorker()
     let deleted = 0;
     let skippedOwnedContent = 0;
     for (const user of users) {
-      const [projects, baseLayers, visualAxes, events] = await Promise.all([
-        prisma.project.count({ where: { ownerId: user.id } }),
-        prisma.baseLayer.count({ where: { ownerId: user.id } }),
-        prisma.visualAxis.count({ where: { ownerId: user.id } }),
-        prisma.event.count({ where: { ownerId: user.id } }),
-      ]);
-      if (projects + baseLayers + visualAxes + events > 0) {
+      const result = await prisma.$transaction(
+        async (tx) => {
+          const lockedUser = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE
+          `;
+          if (lockedUser.length === 0) return "missing" as const;
+          const [projects, baseLayers, visualAxes, events] = await Promise.all([
+            tx.project.count({ where: { ownerId: user.id } }),
+            tx.baseLayer.count({ where: { ownerId: user.id } }),
+            tx.visualAxis.count({ where: { ownerId: user.id } }),
+            tx.event.count({ where: { ownerId: user.id } }),
+          ]);
+          if (projects + baseLayers + visualAxes + events > 0) {
+            return "owned-content" as const;
+          }
+          await tx.user.delete({ where: { id: user.id } });
+          return "deleted" as const;
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+      if (result === "owned-content") {
         skippedOwnedContent += 1;
         continue;
       }
-      await prisma.user.delete({ where: { id: user.id } });
-      deleted += 1;
+      if (result === "deleted") deleted += 1;
     }
 
     console.info({

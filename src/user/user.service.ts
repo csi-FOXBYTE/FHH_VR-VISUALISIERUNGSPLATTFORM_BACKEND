@@ -14,8 +14,10 @@ import {
 import dayjs from "dayjs";
 import {
   getDeletionImpactWithClient,
+  getOwnershipPreflightWithQuery,
   hasUserAdministratorPermission,
   ownershipAuditData,
+  OwnershipConflictError,
   ownershipEntityTypes,
   requiredSuccessorPermissions,
   type OwnershipCountClient,
@@ -166,10 +168,12 @@ const userService = createService(
 
       const impact = await prismaService.$transaction(
         async (tx) => {
-          await tx.user.findUniqueOrThrow({
-            where: { id: userId },
-            select: { id: true },
-          });
+          const lockedUser = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE
+          `;
+          if (lockedUser.length === 0) {
+            throw new GenericRouteError("NOT_FOUND", "USER_NOT_FOUND");
+          }
           const currentImpact = await getDeletionImpactWithClient(
             asOwnershipCountClient(tx),
             userId,
@@ -248,51 +252,34 @@ const userService = createService(
     }
 
     async function deleteSelf(userId: string) {
-      const impact = await getDeletionImpactWithClient(
-        asOwnershipCountClient(prismaService),
-        userId,
+      await prismaService.$transaction(
+        async (tx) => {
+          const lockedUser = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE
+          `;
+          if (lockedUser.length === 0) {
+            throw new GenericRouteError("NOT_FOUND", "USER_NOT_FOUND");
+          }
+          const impact = await getDeletionImpactWithClient(
+            asOwnershipCountClient(tx),
+            userId,
+          );
+          if (!impact.canDelete) {
+            throw new OwnershipConflictError(
+              "OWNED_CONTENT_REQUIRES_ADMINISTRATIVE_TRANSFER",
+            );
+          }
+          await tx.user.delete({ where: { id: userId } });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
-      if (!impact.canDelete) {
-        throw new GenericRouteError(
-          "BAD_REQUEST",
-          "OWNED_CONTENT_REQUIRES_ADMINISTRATIVE_TRANSFER",
-          impact,
-        );
-      }
-      await prismaService.user.delete({ where: { id: userId } });
     }
 
     async function getOwnershipPreflight() {
       await requireUserAdministrator();
-      const [projects, baseLayers, visualAxes, events, invalidRows] = await Promise.all([
-        prismaService.project.count({ where: { ownerId: null } }),
-        prismaService.baseLayer.count({ where: { ownerId: null } }),
-        prismaService.visualAxis.count({ where: { ownerId: null } }),
-        prismaService.event.count({ where: { ownerId: null } }),
-        prismaService.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`
-          SELECT (
-            (SELECT COUNT(*) FROM "Project" p LEFT JOIN "User" u ON u."id" = p."ownerId"
-              WHERE p."ownerId" IS NOT NULL AND u."id" IS NULL) +
-            (SELECT COUNT(*) FROM "BaseLayer" b LEFT JOIN "User" u ON u."id" = b."ownerId"
-              WHERE b."ownerId" IS NOT NULL AND u."id" IS NULL) +
-            (SELECT COUNT(*) FROM "VisualAxis" v LEFT JOIN "User" u ON u."id" = v."ownerId"
-              WHERE v."ownerId" IS NOT NULL AND u."id" IS NULL) +
-            (SELECT COUNT(*) FROM "Event" e LEFT JOIN "User" u ON u."id" = e."ownerId"
-              WHERE e."ownerId" IS NOT NULL AND u."id" IS NULL)
-          )::bigint AS "count"
-        `),
-      ]);
-      const total = projects + baseLayers + visualAxes + events;
-      const invalidReferences = Number(invalidRows[0]?.count ?? 0);
-      return {
-        projects,
-        baseLayers,
-        visualAxes,
-        events,
-        total,
-        invalidReferences,
-        readyForReleaseB: total === 0 && invalidReferences === 0,
-      };
+      return getOwnershipPreflightWithQuery((statement) =>
+        prismaService.$queryRaw(statement),
+      );
     }
 
     async function repairOrphanedOwnership(successors: OwnershipSuccessors) {
@@ -300,13 +287,14 @@ const userService = createService(
       const correlationId = randomUUID();
       const repaired = await prismaService.$transaction(
         async (tx) => {
+          const preflight = await getOwnershipPreflightWithQuery((statement) =>
+            tx.$queryRaw(statement),
+          );
           const counts = {
-            PROJECT: await tx.project.count({ where: { ownerId: null } }),
-            BASE_LAYER: await tx.baseLayer.count({ where: { ownerId: null } }),
-            VISUAL_AXIS: await tx.visualAxis.count({
-              where: { ownerId: null },
-            }),
-            EVENT: await tx.event.count({ where: { ownerId: null } }),
+            PROJECT: preflight.projects,
+            BASE_LAYER: preflight.baseLayers,
+            VISUAL_AXIS: preflight.visualAxes,
+            EVENT: preflight.events,
           } satisfies Record<OwnershipEntityType, number>;
 
           for (const type of ownershipEntityTypes) {
@@ -328,43 +316,39 @@ const userService = createService(
 
           const updates = {
             PROJECT: () =>
-              tx.project.updateMany({
-                where: { ownerId: null },
-                data: { ownerId: successors.PROJECT },
-              }),
+              tx.$executeRaw`UPDATE "Project" SET "ownerId" = ${successors.PROJECT!} WHERE "ownerId" IS NULL`,
             BASE_LAYER: () =>
-              tx.baseLayer.updateMany({
-                where: { ownerId: null },
-                data: { ownerId: successors.BASE_LAYER },
-              }),
+              tx.$executeRaw`UPDATE "BaseLayer" SET "ownerId" = ${successors.BASE_LAYER!} WHERE "ownerId" IS NULL`,
             VISUAL_AXIS: () =>
-              tx.visualAxis.updateMany({
-                where: { ownerId: null },
-                data: { ownerId: successors.VISUAL_AXIS },
-              }),
+              tx.$executeRaw`UPDATE "VisualAxis" SET "ownerId" = ${successors.VISUAL_AXIS!} WHERE "ownerId" IS NULL`,
             EVENT: () =>
-              tx.event.updateMany({
-                where: { ownerId: null },
-                data: { ownerId: successors.EVENT },
-              }),
-          } satisfies Record<OwnershipEntityType, () => Promise<unknown>>;
+              tx.$executeRaw`UPDATE "Event" SET "ownerId" = ${successors.EVENT!} WHERE "ownerId" IS NULL`,
+          } satisfies Record<OwnershipEntityType, () => Promise<number>>;
+
+          const repaired: Record<OwnershipEntityType, number> = {
+            PROJECT: 0,
+            BASE_LAYER: 0,
+            VISUAL_AXIS: 0,
+            EVENT: 0,
+          };
 
           for (const type of ownershipEntityTypes) {
             if (counts[type] === 0) continue;
-            await updates[type]();
+            repaired[type] = await updates[type]();
+            if (repaired[type] === 0) continue;
             await tx.ownershipAuditEvent.create({
               data: ownershipAuditData({
                 correlationId,
                 action: "ORPHAN_REPAIR",
                 entityType: type,
-                entityCount: counts[type],
+                entityCount: repaired[type],
                 actorUserId: session.user.id,
                 previousOwnerId: null,
                 newOwnerId: successors[type]!,
               }),
             });
           }
-          return counts;
+          return repaired;
         },
         { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
       );
@@ -430,16 +414,27 @@ const userService = createService(
         let deleted = 0;
         let skippedOwnedContent = 0;
         for (const user of users) {
-          const impact = await getDeletionImpactWithClient(
-            asOwnershipCountClient(prismaService),
-            user.id,
+          const result = await prismaService.$transaction(
+            async (tx) => {
+              const lockedUser = await tx.$queryRaw<Array<{ id: string }>>`
+                SELECT "id" FROM "User" WHERE "id" = ${user.id} FOR UPDATE
+              `;
+              if (lockedUser.length === 0) return "missing" as const;
+              const impact = await getDeletionImpactWithClient(
+                asOwnershipCountClient(tx),
+                user.id,
+              );
+              if (!impact.canDelete) return "owned-content" as const;
+              await tx.user.delete({ where: { id: user.id } });
+              return "deleted" as const;
+            },
+            { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
           );
-          if (!impact.canDelete) {
+          if (result === "owned-content") {
             skippedOwnedContent += 1;
             continue;
           }
-          await prismaService.user.delete({ where: { id: user.id } });
-          deleted += 1;
+          if (result === "deleted") deleted += 1;
         }
         return { candidates: users.length, deleted, skippedOwnedContent };
       },
