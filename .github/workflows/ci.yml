@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - grid-query-hardening
+      - owner-lifecycle-hardening
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: application
+          POSTGRES_PASSWORD: application
+          POSTGRES_DB: application
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U application"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://application:application@localhost:5432/application
+      TEST_DATABASE_URL: postgresql://application:application@localhost:5432/application
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm zenstack-generate
+      - run: git diff --exit-code
+      - run: pnpm prisma migrate deploy
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build

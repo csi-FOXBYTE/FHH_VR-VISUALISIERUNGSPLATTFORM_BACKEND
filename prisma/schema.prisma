@@ -17,6 +17,19 @@ enum LANGUAGES {
   DE
 }
 
+enum OWNERSHIP_ENTITY_TYPE {
+  PROJECT
+  BASE_LAYER
+  VISUAL_AXIS
+  EVENT
+}
+
+enum OWNERSHIP_AUDIT_ACTION {
+  OWNER_TRANSFER
+  USER_TRANSFER_AND_DELETE
+  ORPHAN_REPAIR
+}
+
 /// This is readonly
 enum PERMISSIONS {
   BASE_LAYER_OWNER
@@ -52,6 +65,22 @@ enum EVENT_STATUS {
 enum EVENT_ATTENDEE_ROLES {
   GUEST
   MODERATOR
+}
+
+model OwnershipAuditEvent {
+  id              String                 @id() @default(cuid())
+  createdAt       DateTime               @default(now())
+  correlationId   String
+  action          OWNERSHIP_AUDIT_ACTION
+  entityType      OWNERSHIP_ENTITY_TYPE
+  entityId        String?
+  entityCount     Int                    @default(1)
+  actorUserId     String
+  previousOwnerId String?
+  newOwnerId      String
+
+  @@index([createdAt])
+  @@index([correlationId])
 }
 
 model User {

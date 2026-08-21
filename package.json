@@ -6,10 +6,12 @@
   "type": "module",
   "scripts": {
     "zenstack-generate": "zenstack generate --schema zmodel/schema.zmodel",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "lint": "oxlint && eslint",
     "dev": "fastify-toab dev",
     "build": "fastify-toab build",
+    "owner:preflight": "tsx src/scripts/ownerLifecyclePreflight.ts",
     "backfill:base-layer-sizes": "tsx src/scripts/backfillBaseLayerSizes.ts",
     "start": "node .build/@internals/run.js",
     "publish:docker": "docker build -t fhhvr-webbackend:0.2.15 . && docker tag fhhvr-webbackend:0.2.15 foxbytecsi/fhhvr-webbackend:0.2.15 && docker push foxbytecsi/fhhvr-webbackend:0.2.15"
@@ -83,6 +85,7 @@
   },
   "devDependencies": {
     "@eslint-recommended/eslint-config": "^28.0.0",
+    "@eslint/js": "^10.0.1",
     "@fastify/auth": "^5.0.2",
     "@fastify/cookie": "^11.0.2",
     "@fastify/session": "^11.1.0",
@@ -113,6 +116,7 @@
     "tiny-glob": "^0.2.9",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
+    "vitest": "^4.1.11",
     "zenstack": "2.15.0"
   },
   "packageManager": "pnpm@10.20.0+sha512.cf9998222162dd85864d0a8102e7892e7ba4ceadebbf5a31f9c2fce48dfce317a9c53b9f6464d1ef9042cba2e02ae02a9f7c143a2b438cd93c91840f0192b9dd"
