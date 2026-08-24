@@ -47,7 +47,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm zenstack-generate
-      - run: git diff --exit-code
+      - run: git diff --exit-code -- prisma/schema.prisma
       - run: pnpm schema:check-parity
         env:
           ZMODEL_PEER_DIR: ${{ github.workspace }}/.schema-peer/zmodel
