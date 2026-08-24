@@ -192,7 +192,7 @@ const userService = createService(
           }),
       } satisfies Record<
         OwnershipEntityType,
-        () => Promise<{ ownerId: string } | null>
+        () => Promise<{ ownerId: string | null } | null>
       >;
       const entity = await ownerQueries[type]();
       if (!entity) {
