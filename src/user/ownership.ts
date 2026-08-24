@@ -11,13 +11,45 @@ export type OwnershipSuccessors = Partial<
   Record<OwnershipEntityType, string>
 >;
 
+export type OwnershipRole = {
+  isAdminRole: boolean;
+  assignedPermissions: $Enums.PERMISSIONS[];
+};
+
+export type OwnershipConflictPayload = {
+  impact: {
+    projects: number;
+    baseLayers: number;
+    visualAxes: number;
+    events: number;
+    total: number;
+    canDelete: boolean;
+  };
+  nextSteps: [
+    "CONTACT_USER_ADMINISTRATOR",
+    "SELECT_SUCCESSORS_BY_ENTITY_TYPE",
+  ];
+};
+
 export class OwnershipConflictError extends Error {
   readonly statusCode = 409;
   readonly code = "OWNERSHIP_CONFLICT";
 
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly payload: OwnershipConflictPayload,
+  ) {
     super(message);
     this.name = "OwnershipConflictError";
+  }
+
+  toJSON() {
+    return {
+      status: "CONFLICT" as const,
+      code: this.code,
+      message: this.message,
+      payload: this.payload,
+    };
   }
 }
 
@@ -136,10 +168,7 @@ export async function getDeletionImpactWithClient(
 
 export function isEligibleSuccessor(
   type: OwnershipEntityType,
-  roles: Array<{
-    isAdminRole: boolean;
-    assignedPermissions: $Enums.PERMISSIONS[];
-  }>,
+  roles: OwnershipRole[],
 ) {
   return roles.some(
     (role) =>
@@ -151,10 +180,7 @@ export function isEligibleSuccessor(
 }
 
 export function hasUserAdministratorPermission(
-  roles: Array<{
-    isAdminRole: boolean;
-    assignedPermissions: $Enums.PERMISSIONS[];
-  }>,
+  roles: OwnershipRole[],
 ) {
   return roles.some(
     (role) =>
@@ -162,6 +188,16 @@ export function hasUserAdministratorPermission(
       role.assignedPermissions.includes(
         $Enums.PERMISSIONS.USER_ADMINISTRATOR,
       ),
+  );
+}
+
+export function canTransferOwnership(
+  actorUserId: string,
+  currentOwnerId: string | null,
+  roles: OwnershipRole[],
+) {
+  return (
+    actorUserId === currentOwnerId || hasUserAdministratorPermission(roles)
   );
 }
 

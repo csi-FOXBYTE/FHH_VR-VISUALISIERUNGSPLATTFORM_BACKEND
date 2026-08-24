@@ -13,6 +13,7 @@ import {
 } from "../@internals/index.js";
 import dayjs from "dayjs";
 import {
+  canTransferOwnership,
   getDeletionImpactWithClient,
   getOwnershipPreflightWithQuery,
   hasUserAdministratorPermission,
@@ -66,7 +67,7 @@ const userService = createService(
       client: OwnershipClient,
       type: OwnershipEntityType,
       successorId: string,
-      previousOwnerId?: string,
+      previousOwnerId?: string | null,
     ) {
       if (successorId === previousOwnerId) {
         throw new GenericRouteError(
@@ -116,11 +117,10 @@ const userService = createService(
       );
     }
 
-    async function getOwnershipSuccessors(
+    async function findOwnershipSuccessors(
       type: OwnershipEntityType,
       excludedUserId?: string,
     ) {
-      await requireUserAdministrator();
       return prismaService.user.findMany({
         where: {
           ...(excludedUserId ? { id: { not: excludedUserId } } : {}),
@@ -146,11 +146,68 @@ const userService = createService(
       });
     }
 
+    async function getOwnershipSuccessors(
+      type: OwnershipEntityType,
+      excludedUserId?: string,
+    ) {
+      await requireUserAdministrator();
+      return findOwnershipSuccessors(type, excludedUserId);
+    }
+
     async function getDeletionSuccessors(
       userId: string,
       type: OwnershipEntityType,
     ) {
       return getOwnershipSuccessors(type, userId);
+    }
+
+    async function getTransferSuccessors(
+      type: OwnershipEntityType,
+      entityId: string,
+    ) {
+      const session = await authService.getSession();
+      if (!session) {
+        throw new GenericRouteError("UNAUTHORIZED", "ACCESS_DENIED");
+      }
+      const ownerQueries = {
+        PROJECT: () =>
+          prismaService.project.findUnique({
+            where: { id: entityId },
+            select: { ownerId: true },
+          }),
+        BASE_LAYER: () =>
+          prismaService.baseLayer.findUnique({
+            where: { id: entityId },
+            select: { ownerId: true },
+          }),
+        VISUAL_AXIS: () =>
+          prismaService.visualAxis.findUnique({
+            where: { id: entityId },
+            select: { ownerId: true },
+          }),
+        EVENT: () =>
+          prismaService.event.findUnique({
+            where: { id: entityId },
+            select: { ownerId: true },
+          }),
+      } satisfies Record<
+        OwnershipEntityType,
+        () => Promise<{ ownerId: string } | null>
+      >;
+      const entity = await ownerQueries[type]();
+      if (!entity) {
+        throw new GenericRouteError("NOT_FOUND", `${type}_NOT_FOUND`);
+      }
+      const roles = session.user.assignedGroups.flatMap(
+        (group) => group.assignedRoles,
+      );
+      if (!canTransferOwnership(session.user.id, entity.ownerId, roles)) {
+        throw new GenericRouteError(
+          "FORBIDDEN",
+          "CURRENT_OWNER_OR_USER_ADMINISTRATOR_REQUIRED",
+        );
+      }
+      return findOwnershipSuccessors(type, entity.ownerId);
     }
 
     async function transferAndDelete(
@@ -251,6 +308,118 @@ const userService = createService(
       return { correlationId, impact };
     }
 
+    async function transferOwnership(
+      type: OwnershipEntityType,
+      entityId: string,
+      successorId: string,
+    ) {
+      const session = await authService.getSession();
+      if (!session) {
+        throw new GenericRouteError("UNAUTHORIZED", "ACCESS_DENIED");
+      }
+      const roles = session.user.assignedGroups.flatMap(
+        (group) => group.assignedRoles,
+      );
+      const correlationId = randomUUID();
+
+      return prismaService.$transaction(
+        async (tx) => {
+          const locks = {
+            PROJECT: () =>
+              tx.$queryRaw<Array<{ ownerId: string | null }>>`
+                SELECT "ownerId" FROM "Project" WHERE "id" = ${entityId} FOR UPDATE
+              `,
+            BASE_LAYER: () =>
+              tx.$queryRaw<Array<{ ownerId: string | null }>>`
+                SELECT "ownerId" FROM "BaseLayer" WHERE "id" = ${entityId} FOR UPDATE
+              `,
+            VISUAL_AXIS: () =>
+              tx.$queryRaw<Array<{ ownerId: string | null }>>`
+                SELECT "ownerId" FROM "VisualAxis" WHERE "id" = ${entityId} FOR UPDATE
+              `,
+            EVENT: () =>
+              tx.$queryRaw<Array<{ ownerId: string | null }>>`
+                SELECT "ownerId" FROM "Event" WHERE "id" = ${entityId} FOR UPDATE
+              `,
+          } satisfies Record<
+            OwnershipEntityType,
+            () => Promise<Array<{ ownerId: string | null }>>
+          >;
+          const entity = (await locks[type]())[0];
+          if (!entity) {
+            throw new GenericRouteError("NOT_FOUND", `${type}_NOT_FOUND`);
+          }
+          if (
+            !canTransferOwnership(
+              session.user.id,
+              entity.ownerId,
+              roles,
+            )
+          ) {
+            throw new GenericRouteError(
+              "FORBIDDEN",
+              "CURRENT_OWNER_OR_USER_ADMINISTRATOR_REQUIRED",
+            );
+          }
+          await validateSuccessor(
+            asOwnershipClient(tx),
+            type,
+            successorId,
+            entity.ownerId,
+          );
+
+          const updates = {
+            PROJECT: () =>
+              tx.project.update({
+                where: { id: entityId },
+                data: { ownerId: successorId },
+                select: { id: true },
+              }),
+            BASE_LAYER: () =>
+              tx.baseLayer.update({
+                where: { id: entityId },
+                data: { ownerId: successorId },
+                select: { id: true },
+              }),
+            VISUAL_AXIS: () =>
+              tx.visualAxis.update({
+                where: { id: entityId },
+                data: { ownerId: successorId },
+                select: { id: true },
+              }),
+            EVENT: () =>
+              tx.event.update({
+                where: { id: entityId },
+                data: { ownerId: successorId },
+                select: { id: true },
+              }),
+          } satisfies Record<OwnershipEntityType, () => Promise<{ id: string }>>;
+          await updates[type]();
+          await tx.ownershipAuditEvent.create({
+            data: ownershipAuditData({
+              correlationId,
+              action: entity.ownerId ? "OWNER_TRANSFER" : "ORPHAN_REPAIR",
+              entityType: type,
+              entityId,
+              entityCount: 1,
+              actorUserId: session.user.id,
+              previousOwnerId: entity.ownerId,
+              newOwnerId: successorId,
+            }),
+          });
+
+          return {
+            correlationId,
+            entityType: type,
+            entityId,
+            previousOwnerId: entity.ownerId,
+            newOwnerId: successorId,
+          };
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
+    }
+
     async function deleteSelf(userId: string) {
       await prismaService.$transaction(
         async (tx) => {
@@ -267,6 +436,13 @@ const userService = createService(
           if (!impact.canDelete) {
             throw new OwnershipConflictError(
               "OWNED_CONTENT_REQUIRES_ADMINISTRATIVE_TRANSFER",
+              {
+                impact,
+                nextSteps: [
+                  "CONTACT_USER_ADMINISTRATOR",
+                  "SELECT_SUCCESSORS_BY_ENTITY_TYPE",
+                ],
+              },
             );
           }
           await tx.user.delete({ where: { id: userId } });
@@ -359,7 +535,9 @@ const userService = createService(
       getDeletionImpact,
       getDeletionSuccessors,
       getOwnershipSuccessors,
+      getTransferSuccessors,
       transferAndDelete,
+      transferOwnership,
       deleteSelf,
       getOwnershipPreflight,
       repairOrphanedOwnership,

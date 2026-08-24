@@ -70,6 +70,60 @@ userController
   });
 
 userController
+  .addRoute("POST", "/ownership/:type/:entityId/transfer")
+  .params(
+    Type.Object({
+      type: ownershipEntityTypeDTO,
+      entityId: Type.String({ minLength: 1 }),
+    }),
+  )
+  .body(
+    Type.Object(
+      { successorId: Type.String({ minLength: 1 }) },
+      { additionalProperties: false },
+    ),
+  )
+  .output(
+    Type.Object({
+      correlationId: Type.String(),
+      entityType: ownershipEntityTypeDTO,
+      entityId: Type.String(),
+      previousOwnerId: Type.Union([Type.String(), Type.Null()]),
+      newOwnerId: Type.String(),
+    }),
+  )
+  .handler(async ({ params, body, services }) => {
+    const userService = await getUserService(services);
+    return userService.transferOwnership(
+      params.type,
+      params.entityId,
+      body.successorId,
+    );
+  });
+
+userController
+  .addRoute("GET", "/ownership/:type/:entityId/successors")
+  .params(
+    Type.Object({
+      type: ownershipEntityTypeDTO,
+      entityId: Type.String({ minLength: 1 }),
+    }),
+  )
+  .output(
+    Type.Array(
+      Type.Object({
+        id: Type.String(),
+        name: Type.Union([Type.String(), Type.Null()]),
+        email: Type.String(),
+      }),
+    ),
+  )
+  .handler(async ({ params, services }) => {
+    const userService = await getUserService(services);
+    return userService.getTransferSuccessors(params.type, params.entityId);
+  });
+
+userController
   .addRoute("GET", "/:id/deletion-impact")
   .params(Type.Object({ id: Type.String() }))
   .output(ownershipImpactDTO)

@@ -30,6 +30,23 @@ Audit rows contain internal IDs, entity type/count, timestamp and correlation
 ID only. They are inaccessible through ZenStack client policies and are removed
 after 365 days by the scheduled cleanup worker.
 
+Current owners can discover eligible successors and transfer any supported
+entity through the scoped endpoints below. `USER_ADMINISTRATOR` and global
+administrators may perform the same operation for administrative repair:
+
+- `GET /user/ownership/:type/:entityId/successors`
+- `POST /user/ownership/:type/:entityId/transfer`
+
+The transfer locks the entity row, validates the type-specific successor,
+updates the owner and writes the audit row in one serializable transaction.
+Callers who are neither the current owner nor an administrator receive HTTP
+403.
+
+Self-deletion with owned content returns HTTP 409 with code
+`OWNERSHIP_CONFLICT`. Its payload contains ownership counts and the stable next
+steps `CONTACT_USER_ADMINISTRATOR` and
+`SELECT_SUCCESSORS_BY_ENTITY_TYPE`.
+
 ## Release B gate
 
 Release B must not be deployed until the preflight exits successfully:

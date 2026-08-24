@@ -1,6 +1,7 @@
 import { $Enums } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 import {
+  canTransferOwnership,
   getDeletionImpactWithClient,
   getOwnershipPreflightWithQuery,
   hasUserAdministratorPermission,
@@ -93,6 +94,27 @@ describe("owner lifecycle rules", () => {
     ).toBe(false);
   });
 
+  it("allows an owner or user administrator to transfer an entity", () => {
+    expect(canTransferOwnership("owner", "owner", [])).toBe(true);
+    expect(
+      canTransferOwnership("administrator", "owner", [
+        {
+          isAdminRole: false,
+          assignedPermissions: [$Enums.PERMISSIONS.USER_ADMINISTRATOR],
+        },
+      ]),
+    ).toBe(true);
+    expect(
+      canTransferOwnership("other-user", "owner", [
+        {
+          isAdminRole: false,
+          assignedPermissions: [$Enums.PERMISSIONS.PROJECT_OWNER],
+        },
+      ]),
+    ).toBe(false);
+    expect(canTransferOwnership("other-user", null, [])).toBe(false);
+  });
+
   it("keeps audit records data-minimized", () => {
     const audit = ownershipAuditData({
       correlationId: "correlation-id",
@@ -144,8 +166,34 @@ describe("owner lifecycle rules", () => {
   });
 
   it("uses HTTP 409 for ownership conflicts", () => {
-    const error = new OwnershipConflictError("transfer required");
+    const impact = {
+      projects: 1,
+      baseLayers: 0,
+      visualAxes: 0,
+      events: 0,
+      total: 1,
+      canDelete: false,
+    };
+    const error = new OwnershipConflictError("transfer required", {
+      impact,
+      nextSteps: [
+        "CONTACT_USER_ADMINISTRATOR",
+        "SELECT_SUCCESSORS_BY_ENTITY_TYPE",
+      ],
+    });
     expect(error.statusCode).toBe(409);
     expect(error.code).toBe("OWNERSHIP_CONFLICT");
+    expect(error.toJSON()).toEqual({
+      status: "CONFLICT",
+      code: "OWNERSHIP_CONFLICT",
+      message: "transfer required",
+      payload: {
+        impact,
+        nextSteps: [
+          "CONTACT_USER_ADMINISTRATOR",
+          "SELECT_SUCCESSORS_BY_ENTITY_TYPE",
+        ],
+      },
+    });
   });
 });
