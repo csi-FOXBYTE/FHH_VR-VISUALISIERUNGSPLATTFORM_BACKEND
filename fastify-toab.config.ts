@@ -1,6 +1,5 @@
 import {
   defineConfig,
-  genericRouteErrorHandler,
   type FastifyToabConfigOptions,
 } from "@csi-foxbyte/fastify-toab";
 import { FastifyOtelInstrumentation } from "@fastify/otel";
@@ -8,7 +7,7 @@ import json from "./package.json" with { type: "json" };
 import { globalOrderMiddleware } from "./src/globalMiddlewares/middleWare.js";
 import { Type } from "@sinclair/typebox";
 import type { FastifyInstance } from "fastify";
-import { OwnershipConflictError } from "./src/user/ownership.js";
+import { ownershipRouteErrorHandler } from "./src/user/ownershipRouteError.js";
 
 const server: NonNullable<FastifyToabConfigOptions["server"]> = {
   fastify: {
@@ -34,15 +33,7 @@ export const rolldown: NonNullable<FastifyToabConfigOptions["rolldown"]> = {
 };
 
 export default defineConfig({
-  onRouteError: (context) => {
-    if (context.error instanceof OwnershipConflictError) {
-      context.reply
-        .code(context.error.statusCode)
-        .send(context.error.toJSON());
-      return;
-    }
-    return genericRouteErrorHandler(context);
-  },
+  onRouteError: ownershipRouteErrorHandler,
   rolldown,
   env: Type.Object({
     PORT: Type.String(),

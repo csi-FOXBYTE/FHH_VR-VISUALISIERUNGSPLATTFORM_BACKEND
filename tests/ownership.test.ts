@@ -10,6 +10,7 @@ import {
   ownershipAuditData,
   OwnershipConflictError,
 } from "../src/user/ownership.js";
+import { ownershipRouteErrorHandler } from "../src/user/ownershipRouteError.js";
 
 describe("owner lifecycle rules", () => {
   it("counts every ownable type and blocks direct deletion", async () => {
@@ -195,5 +196,17 @@ describe("owner lifecycle rules", () => {
         ],
       },
     });
+
+    const reply = {
+      code: vi.fn(),
+      send: vi.fn(),
+    };
+    reply.code.mockReturnValue(reply);
+    ownershipRouteErrorHandler({
+      error,
+      reply,
+    } as unknown as Parameters<typeof ownershipRouteErrorHandler>[0]);
+    expect(reply.code).toHaveBeenCalledWith(409);
+    expect(reply.send).toHaveBeenCalledWith(error.toJSON());
   });
 });
