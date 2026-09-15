@@ -64,6 +64,7 @@ export default async function run(
       // thousands of meshes. Measured on such a model: peak 4.184 -> 3.143 MB,
       // 86,7 -> 24,1 s, with an unchanged triangle count.
       const index = await buildIfcIndex(sourcePath);
+      const datum = verticalDatumOf(index);
       const storeyLabel = new Map(
         index.storeys.map((storey) => [storey.guid, storey.name ?? storey.guid])
       );
@@ -75,7 +76,7 @@ export default async function run(
       let withoutStorey = 0;
 
       const { document: built, stats } = await buildDocumentFromIfc(sourcePath, {
-        originY: verticalDatumOf(index),
+        originY: datum.metres,
         mergeInto: (nodeName) => {
           const storey = index.productToStorey.get(nodeName);
           if (!storey) {
@@ -106,7 +107,7 @@ export default async function run(
       console.log(
         `${job.data.fileName}: ${index.storeys.length} Stockwerke, ` +
           `${assignedToStorey} Platzierungen zugeordnet, ${withoutStorey} ohne Stockwerk, ` +
-          `Versatz X ${stats.originX} / Y ${stats.originY.toFixed(2)} / Z ${stats.originZ} m`
+          `Versatz X ${stats.originX} / Y ${stats.originY.toFixed(2)} (${datum.source}) / Z ${stats.originZ} m`
       );
       document = built;
       await job.updateProgress(0.6);
