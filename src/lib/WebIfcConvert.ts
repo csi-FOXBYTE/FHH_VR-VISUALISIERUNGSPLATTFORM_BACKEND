@@ -415,17 +415,23 @@ export async function buildDocumentFromIfc(
   };
 }
 
-/**
- * Upper bound for distinct geometries before the post-processing chain becomes
- * the bottleneck.
+/*
+ * There used to be a ceiling on distinct geometries here (60.000). It was
+ * written when the pipeline still ran dedup() over one mesh per placement: a
+ * 110 MB model with 237.325 geometries and 711.975 accessors did not finish
+ * within 20 minutes, one core at 100 %, memory flat.
  *
- * Measured: a 110 MB model produced 237.325 geometries with 711.975 accessors,
- * and dedup()/join() over them did not finish within 20 minutes - one core at
- * 100 %, memory perfectly flat, no I/O. Well-behaved models of comparable size
- * land between 2.000 and 10.000. The threshold sits far above the healthy range
- * so it only fires on the pathological shape, not on merely large models.
+ * It never actually fired, because uniqueGeometries was read after the merge
+ * path had already cleared the cache and was therefore always 0. Fixing that
+ * made the ceiling reachable - and it immediately rejected that very model,
+ * which by then converted fine: 23,2 s end to end (15,5 s conversion, 4,5 s
+ * post-processing, 0,8 s write), peak 3.576 MB, 716.985 triangles, 2,1 MB GLB.
+ *
+ * dedup() is gone and geometry is merged while streaming, so the shape it
+ * guarded against no longer costs what it did. Removed rather than retuned: a
+ * higher number would only look principled. The real limit is memory, and that
+ * does not follow from the geometry count.
  */
-export const MAX_GEOMETRIES = 60_000;
 
 export type WebIfcVerdict =
   | { usable: true; warning?: string }
@@ -435,12 +441,13 @@ export type WebIfcVerdict =
  * Decides whether a web-ifc result can go through the normal pipeline.
  *
  * web-ifc offers no per-element error list, so the shape of the output is the
- * only signal available. Two failure modes were observed, and both are visible
- * here rather than an hour later in a wedged worker.
+ * only signal available. Only an empty result is rejected outright - that one
+ * is unambiguous, and catching it here beats failing an hour later downstream.
  *
- * Thin GUID coverage is deliberately not one of them: those elements keep their
- * geometry and land in the "ohne Stockwerk" group, so only the storey split
- * degrades. That is reported as a warning, never as a rejection.
+ * Everything else is reported, not refused. Thin GUID coverage still keeps its
+ * geometry and lands in the "ohne Stockwerk" group, so only the storey split
+ * degrades. A guard that rejects a model the pipeline can actually handle costs
+ * more than the case it prevents; see the note above the verdict type.
  */
 export function assessWebIfcResult(stats: WebIfcConvertStats): WebIfcVerdict {
   if (stats.placements === 0 || stats.triangles === 0) {
@@ -449,16 +456,6 @@ export function assessWebIfcResult(stats: WebIfcConvertStats): WebIfcVerdict {
       reason:
         `keine Geometrie erzeugt (${stats.placements} Platzierungen, ` +
         `${stats.triangles} Dreiecke)`,
-    };
-  }
-
-  if (stats.uniqueGeometries > MAX_GEOMETRIES) {
-    return {
-      usable: false,
-      reason:
-        `${stats.uniqueGeometries.toLocaleString("de-DE")} einzelne Geometrien ` +
-        `(Grenze ${MAX_GEOMETRIES.toLocaleString("de-DE")}) - die Nachbearbeitung ` +
-        `wuerde darauf nicht in vertretbarer Zeit fertig`,
     };
   }
 
