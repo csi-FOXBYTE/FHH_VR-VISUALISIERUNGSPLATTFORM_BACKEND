@@ -1,4 +1,4 @@
-import { createService } from "@csi-foxbyte/fastify-toab";
+import { createService, GenericRouteError } from "@csi-foxbyte/fastify-toab";
 import { Readable } from "node:stream";
 import {
   getBlobStorageService,
@@ -63,15 +63,16 @@ const converter3DService = createService(
 
         const state = await job.getState();
 
-        // Report the failure instead of throwing. A failed job is a normal,
-        // terminal answer; throwing made it an unserialisable 500 that the
-        // client could not read and kept polling against for 43 minutes.
+        // Thrown, not returned: an unchanged client only treats a non-2xx as
+        // terminal, and would otherwise poll a dead job for 43 minutes. The
+        // framework's error type carries the "status" field its response schema
+        // demands - a plain Error does not, which is what turned every failure
+        // into an unreadable 500.
         if (state === "failed") {
-          return {
-            state,
-            progress: Number(job.progress),
-            failedReason: job.failedReason || "Unbekannter Fehler",
-          };
+          throw new GenericRouteError(
+            "INTERNAL_ERROR",
+            `Konvertierung fehlgeschlagen: ${job.failedReason || "Unbekannter Fehler"}`
+          );
         }
 
         if (state === "completed") {

@@ -1,5 +1,7 @@
 import {
   defineConfig,
+  GenericRouteError,
+  isGenericError,
   type FastifyToabConfigOptions,
 } from "@csi-foxbyte/fastify-toab";
 import { FastifyOtelInstrumentation } from "@fastify/otel";
@@ -7,6 +9,9 @@ import json from "./package.json" with { type: "json" };
 import { globalOrderMiddleware } from "./src/globalMiddlewares/middleWare.js";
 import { Type } from "@sinclair/typebox";
 import type { FastifyInstance } from "fastify";
+
+// Same check the framework itself uses to decide what counts as development.
+const isDevelopment = process.env.NODE_ENV === "development";
 
 const server: NonNullable<FastifyToabConfigOptions["server"]> = {
   fastify: {
@@ -100,6 +105,26 @@ export default defineConfig({
   server,
   rootDir: "src",
   globalMiddlewares: [globalOrderMiddleware],
+  // Without an error handler a thrown error falls through to Fastify's default
+  // one, whose error schema requires a "status" field that a plain Error does
+  // not carry. Every failure then came back as a bare
+  // FST_ERR_FAILED_ERROR_SERIALIZATION with no reason in it.
+  //
+  // Not the framework's genericRouteErrorHandler directly: its toJSON() always
+  // attaches the stack trace with absolute paths, which has no business leaving
+  // the server outside development.
+  onRouteError: ({ error, reply }) => {
+    const routeError = isGenericError(error)
+      ? error
+      : GenericRouteError.fromError(
+          error instanceof Error ? error : new Error(String(error)),
+          "INTERNAL_ERROR",
+          error instanceof Error ? error.message : "Unknown internal error"
+        );
+
+    const { internal, ...body } = routeError.toJSON();
+    reply.status(routeError.code).send(isDevelopment ? { ...body, internal } : body);
+  },
   onPreStart: async (fastify: FastifyInstance): Promise<void> => {
     fastify.get("/ping", async () => "OK");
 

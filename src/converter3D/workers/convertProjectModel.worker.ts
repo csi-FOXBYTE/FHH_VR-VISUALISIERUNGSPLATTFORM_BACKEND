@@ -40,7 +40,11 @@ const convertProjectModelWorker = createWorker()
     );
   })
   .options({
-    concurrency: 2,
+    // One at a time. Measured peak for a single IFC conversion: 3.576 MB, so
+    // two in parallel need ~7 GB and an 8 GB instance gets OOM-killed. Until
+    // this branch, large models crashed early on a maxBuffer limit and never
+    // reached that peak - the ceiling was hidden by a bug, not by headroom.
+    concurrency: 1,
     removeOnFail: { count: 200, age: 24 * 3600 },
     stalledInterval: 120_000,
     telemetry: new BullMQOtel("bullmq")
