@@ -46,13 +46,15 @@ export type WebIfcConvertOptions = {
 };
 
 export type WebIfcConvertStats = {
+  /** IFC products that carried geometry - one per streamed mesh. */
+  elements: number;
   /** Node/mesh pairs written, i.e. placements of a geometry. */
   placements: number;
   /** Distinct geometries; placements minus this is what instancing shares. */
   uniqueGeometries: number;
   triangles: number;
   materials: number;
-  /** Share of nodes named with a real IFC GlobalId. */
+  /** Share of *elements* named with a real IFC GlobalId. */
   guidRatio: number;
   durationMs: number;
 };
@@ -84,8 +86,10 @@ export async function buildDocumentFromIfc(
   const scene = document.createScene();
 
   const materials = new Map<string, ReturnType<Document["createMaterial"]>>();
+  const colourKey = (c: { x: number; y: number; z: number; w: number }) =>
+    [c.x, c.y, c.z, c.w].map((v) => v.toFixed(3)).join(",");
   const materialFor = (c: { x: number; y: number; z: number; w: number }) => {
-    const key = [c.x, c.y, c.z, c.w].map((v) => v.toFixed(3)).join(",");
+    const key = colourKey(c);
     let material = materials.get(key);
     if (!material) {
       material = document
@@ -109,10 +113,41 @@ export async function buildDocumentFromIfc(
   // Accumulates transformed geometry per bucket and flushes to a mesh once the
   // budget is reached, so the document never holds hundreds of thousands of
   // tiny meshes.
-  type Bucket = { pos: number[]; nrm: number[]; idx: number[]; colour: { x: number; y: number; z: number; w: number } };
+  type Bucket = {
+    /** The grouping key the caller asked for, e.g. the storey name. */
+    storey: string;
+    pos: number[];
+    nrm: number[];
+    idx: number[];
+    colour: { x: number; y: number; z: number; w: number };
+  };
+  // Keyed by storey AND colour. Merging a whole storey into one primitive
+  // leaves room for only one material on it, which repainted every floor in
+  // whichever colour happened to arrive first.
   const buckets = new Map<string, Bucket>();
   const mergeBudget = (options.mergeBudgetMb ?? 32) * 1024 * 1024;
+  // Splitting by colour multiplies the number of open buckets by the palette
+  // size, so the per-bucket budget alone no longer bounds memory. This caps
+  // what all buckets together may hold before the largest one is flushed.
+  const totalBudget = (options.mergeBudgetMb ?? 32) * 8 * 1024 * 1024;
   const bucketNodes = new Map<string, number>();
+  // One parent node per storey. join() merges only within a shared parent, so a
+  // flat scene lets it merge by material straight across floors - measured: 150
+  // storey-tagged nodes collapsed into 48 material blobs, losing the grouping
+  // the whole pipeline exists to produce.
+  const storeyParents = new Map<string, ReturnType<Document["createNode"]>>();
+  const parentFor = (storey: string) => {
+    let parent = storeyParents.get(storey);
+    if (!parent) {
+      parent = document.createNode(storey);
+      parent.setExtras({ storey });
+      scene.addChild(parent);
+      storeyParents.set(storey, parent);
+    }
+    return parent;
+  };
+  const bucketBytes = (b: Bucket) => b.pos.length * 8 + b.idx.length * 4;
+  let heldBytes = 0;
 
   const flushBucket = (key: string) => {
     const bucket = buckets.get(key);
@@ -131,27 +166,47 @@ export async function buildDocumentFromIfc(
         document.createAccessor().setType("SCALAR").setArray(new Uint32Array(bucket.idx)).setBuffer(buffer)
       )
       .setMaterial(materialFor(bucket.colour));
-    const part = (bucketNodes.get(key) ?? 0) + 1;
-    bucketNodes.set(key, part);
+    const part = (bucketNodes.get(bucket.storey) ?? 0) + 1;
+    bucketNodes.set(bucket.storey, part);
+    const name = `${bucket.storey}#${part}`;
     const node = document
-      .createNode(part === 1 ? key : `${key}#${part}`)
-      .setMesh(document.createMesh(key).addPrimitive(primitive));
-    node.setExtras({ ...(node.getExtras() ?? {}), mergedBucket: key });
-    scene.addChild(node);
+      .createNode(name)
+      .setMesh(document.createMesh(name).addPrimitive(primitive));
+    node.setExtras({ ...(node.getExtras() ?? {}), mergedBucket: bucket.storey });
+    parentFor(bucket.storey).addChild(node);
+    heldBytes -= bucketBytes(bucket);
     buckets.delete(key);
   };
 
+  /** Keeps total unflushed geometry under totalBudget. */
+  const flushLargest = () => {
+    let largestKey: string | undefined;
+    let largest = -1;
+    for (const [candidate, bucket] of buckets) {
+      const bytes = bucketBytes(bucket);
+      if (bytes > largest) {
+        largest = bytes;
+        largestKey = candidate;
+      }
+    }
+    if (largestKey === undefined) return false;
+    flushBucket(largestKey);
+    return true;
+  };
+
   const appendToBucket = (
-    key: string,
+    storey: string,
     mesh: ReturnType<Document["createMesh"]>,
     matrix: ArrayLike<number>,
     colour: { x: number; y: number; z: number; w: number }
   ) => {
+    const key = `${storey}\u0000${colourKey(colour)}`;
     let bucket = buckets.get(key);
     if (!bucket) {
-      bucket = { pos: [], nrm: [], idx: [], colour };
+      bucket = { storey, pos: [], nrm: [], idx: [], colour };
       buckets.set(key, bucket);
     }
+    const bytesBefore = bucketBytes(bucket);
     const m = matrix;
     for (const primitive of mesh.listPrimitives()) {
       const position = primitive.getAttribute("POSITION")?.getArray();
@@ -183,14 +238,24 @@ export async function buildDocumentFromIfc(
       for (let i = 0; i < indices.length; i++) bucket.idx.push(base + indices[i]!);
     }
     // Rough byte estimate: 3 floats position + 3 normal + 1 index per entry.
-    if (bucket.pos.length * 4 * 2 + bucket.idx.length * 4 > mergeBudget) flushBucket(key);
+    const bytesAfter = bucketBytes(bucket);
+    heldBytes += bytesAfter - bytesBefore;
+    if (bytesAfter > mergeBudget) {
+      flushBucket(key);
+      return;
+    }
+    while (heldBytes > totalBudget && flushLargest()) {
+      /* flushLargest reduces heldBytes each time */
+    }
   };
 
+  let elements = 0;
   let placements = 0;
   let triangles = 0;
   let guidNamed = 0;
 
   api.StreamAllMeshes(modelID, (flatMesh) => {
+    elements++;
     let name = String(flatMesh.expressID);
     try {
       const line = api.GetLine(modelID, flatMesh.expressID);
@@ -272,6 +337,11 @@ export async function buildDocumentFromIfc(
   });
 
   for (const key of [...buckets.keys()]) flushBucket(key);
+
+  // Read before the merge path empties the cache below - otherwise this stat is
+  // always 0 on exactly the path production uses.
+  const uniqueGeometries = meshCache.size;
+
   if (options.mergeInto) {
     // Merged geometry is baked into world space; the per-placement meshes that
     // fed it are no longer referenced and would otherwise linger.
@@ -284,11 +354,14 @@ export async function buildDocumentFromIfc(
   return {
     document,
     stats: {
+      elements,
       placements,
-      uniqueGeometries: meshCache.size,
+      uniqueGeometries,
       triangles: Math.round(triangles),
       materials: materials.size,
-      guidRatio: placements > 0 ? guidNamed / placements : 0,
+      // Per element, not per placement: an element commonly carries several
+      // geometries, which would deflate the ratio by exactly that factor.
+      guidRatio: elements > 0 ? guidNamed / elements : 0,
       durationMs: Date.now() - startedAt,
     },
   };
@@ -307,7 +380,7 @@ export async function buildDocumentFromIfc(
 export const MAX_GEOMETRIES = 60_000;
 
 export type WebIfcVerdict =
-  | { usable: true }
+  | { usable: true; warning?: string }
   | { usable: false; reason: string };
 
 /**
@@ -316,6 +389,10 @@ export type WebIfcVerdict =
  * web-ifc offers no per-element error list, so the shape of the output is the
  * only signal available. Two failure modes were observed, and both are visible
  * here rather than an hour later in a wedged worker.
+ *
+ * Thin GUID coverage is deliberately not one of them: those elements keep their
+ * geometry and land in the "ohne Stockwerk" group, so only the storey split
+ * degrades. That is reported as a warning, never as a rejection.
  */
 export function assessWebIfcResult(stats: WebIfcConvertStats): WebIfcVerdict {
   if (stats.placements === 0 || stats.triangles === 0) {
@@ -339,10 +416,10 @@ export function assessWebIfcResult(stats: WebIfcConvertStats): WebIfcVerdict {
 
   if (stats.guidRatio < 0.5) {
     return {
-      usable: false,
-      reason:
-        `nur ${(stats.guidRatio * 100).toFixed(1)} % der Knoten tragen eine ` +
-        `IFC-GlobalId - Zuordnung zu Bauteilen und Geschossen nicht moeglich`,
+      usable: true,
+      warning:
+        `nur ${(stats.guidRatio * 100).toFixed(1)} % der Bauteile tragen eine ` +
+        `IFC-GlobalId - der Rest landet in der Gruppe ohne Stockwerk`,
     };
   }
 

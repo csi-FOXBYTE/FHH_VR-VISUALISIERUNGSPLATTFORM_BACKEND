@@ -31,6 +31,8 @@ export type IfcIndex = {
     aggregateRelations: number;
     /** Products attached to a storey only via IFCRELAGGREGATES. */
     resolvedViaAggregates: number;
+    /** Products whose container was a space, lifted to the enclosing storey. */
+    resolvedViaContainerChain: number;
     durationMs: number;
   };
 };
@@ -132,14 +134,38 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
   }
   if (pending.trim()) handle(pending);
 
-  // Direct containment: IFCRELCONTAINEDINSPATIALSTRUCTURE
+  // Aggregation parent of every entity, used to walk the spatial tree upwards.
+  const parentOfRef = new Map<string, string>();
+  for (const { parentRef, childRefs } of aggregates) {
+    for (const ref of childRefs) if (!parentOfRef.has(ref)) parentOfRef.set(ref, parentRef);
+  }
+
+  /** A container is often an IfcSpace, which is itself aggregated into the
+   *  storey. Walking up finds the storey; accepting only a direct storey
+   *  reference dropped two thirds of the geometry on a measured model, where 5
+   *  of 78 containment relations pointed at a storey and the rest at spaces. */
+  const storeyForContainer = (ref: string): string | undefined => {
+    let current: string | undefined = ref;
+    for (let depth = 0; current !== undefined && depth < 16; depth++) {
+      const storey = storeyRefToGuid.get(current);
+      if (storey) return storey;
+      current = parentOfRef.get(current);
+    }
+    return undefined;
+  };
+
+  // Containment: IFCRELCONTAINEDINSPATIALSTRUCTURE, via the container's storey.
   const productToStorey = new Map<string, string>();
+  let resolvedViaContainerChain = 0;
   for (const { products, storeyRef } of containment) {
-    const storeyGuid = storeyRefToGuid.get(storeyRef);
+    const storeyGuid = storeyForContainer(storeyRef);
     if (!storeyGuid) continue;
+    const indirect = !storeyRefToGuid.has(storeyRef);
     for (const ref of products) {
       const guid = refToGuid.get(ref);
-      if (guid) productToStorey.set(guid, storeyGuid);
+      if (!guid) continue;
+      productToStorey.set(guid, storeyGuid);
+      if (indirect) resolvedViaContainerChain++;
     }
   }
 
@@ -151,8 +177,10 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
     let changed = 0;
     for (const { parentRef, childRefs } of aggregates) {
       const parentGuid = refToGuid.get(parentRef);
-      if (!parentGuid) continue;
-      const storeyGuid = productToStorey.get(parentGuid);
+      // The parent may be a storey itself, or a space below one.
+      const storeyGuid =
+        (parentGuid ? productToStorey.get(parentGuid) : undefined) ??
+        storeyForContainer(parentRef);
       if (!storeyGuid) continue;
       for (const ref of childRefs) {
         const guid = refToGuid.get(ref);
@@ -178,6 +206,7 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
       containmentRelations: containment.length,
       aggregateRelations: aggregates.length,
       resolvedViaAggregates,
+      resolvedViaContainerChain,
       durationMs: Date.now() - startedAt,
     },
   };

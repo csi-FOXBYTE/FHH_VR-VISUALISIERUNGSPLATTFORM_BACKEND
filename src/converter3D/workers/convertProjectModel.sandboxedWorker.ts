@@ -81,9 +81,13 @@ export default async function run(
       if (!verdict.usable) {
         throw new Error(`Konvertierung von ${job.data.fileName} unbrauchbar: ${verdict.reason}`);
       }
+      if (verdict.warning) {
+        console.warn(`${job.data.fileName}: ${verdict.warning}`);
+      }
 
       console.log(
-        `${job.data.fileName}: ${stats.placements} Platzierungen, ` +
+        `${job.data.fileName}: ${stats.elements} Bauteile, ` +
+          `${stats.placements} Platzierungen, ${stats.uniqueGeometries} Geometrien, ` +
           `${stats.triangles} Dreiecke, GUID-Anteil ` +
           `${(stats.guidRatio * 100).toFixed(0)} %, ${stats.durationMs} ms`
       );
