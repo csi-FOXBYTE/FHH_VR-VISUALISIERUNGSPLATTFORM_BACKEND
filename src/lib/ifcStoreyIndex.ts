@@ -21,8 +21,6 @@ export type IfcIndex = {
   storeys: StoreyInfo[];
   /** Product GlobalId -> storey GlobalId. */
   productToStorey: Map<string, string>;
-  /** Product GlobalId -> IFC entity type, e.g. "WALL", "SLAB". */
-  guidToType: Map<string, string>;
   /** e.g. 0.001 when the file is modelled in millimetres. */
   lengthUnitToMetres: number;
   /** Height references the file declares, in file units, in the order IFC
@@ -37,16 +35,6 @@ export type IfcIndex = {
     buildingTerrain: number | null;
     /** IfcSite.RefElevation. */
     siteRefElevation: number | null;
-  };
-  stats: {
-    entitiesWithGuid: number;
-    containmentRelations: number;
-    aggregateRelations: number;
-    /** Products attached to a storey only via IFCRELAGGREGATES. */
-    resolvedViaAggregates: number;
-    /** Products whose container was a space, lifted to the enclosing storey. */
-    resolvedViaContainerChain: number;
-    durationMs: number;
   };
 };
 
@@ -228,10 +216,7 @@ export function verticalDatumOf(index: IfcIndex): VerticalDatum {
 }
 
 export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
-  const startedAt = Date.now();
-
   const refToGuid = new Map<string, string>();
-  const guidToType = new Map<string, string>();
   const storeyRefToGuid = new Map<string, string>();
   const storeys: StoreyInfo[] = [];
   const containment: Array<{ products: string[]; storeyRef: string }> = [];
@@ -274,7 +259,6 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
     if (guidMatch) {
       const [, ref, type, guid] = guidMatch;
       refToGuid.set(ref, guid);
-      guidToType.set(guid, type);
 
       const storeyMatch = STOREY.exec(statement);
       if (storeyMatch) {
@@ -360,23 +344,18 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
 
   // Containment: IFCRELCONTAINEDINSPATIALSTRUCTURE, via the container's storey.
   const productToStorey = new Map<string, string>();
-  let resolvedViaContainerChain = 0;
   for (const { products, storeyRef } of containment) {
     const storeyGuid = storeyForContainer(storeyRef);
     if (!storeyGuid) continue;
-    const indirect = !storeyRefToGuid.has(storeyRef);
     for (const ref of products) {
       const guid = refToGuid.get(ref);
-      if (!guid) continue;
-      productToStorey.set(guid, storeyGuid);
-      if (indirect) resolvedViaContainerChain++;
+      if (guid) productToStorey.set(guid, storeyGuid);
     }
   }
 
   // Parts (IfcBuildingElementPart and friends) hang off a parent element via
   // IFCRELAGGREGATES instead of off the storey. Inherit the parent's storey,
   // repeating until nothing new resolves so nested aggregates settle too.
-  let resolvedViaAggregates = 0;
   for (let pass = 0; pass < 8; pass++) {
     let changed = 0;
     for (const { parentRef, childRefs } of aggregates) {
@@ -394,25 +373,10 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
         }
       }
     }
-    resolvedViaAggregates += changed;
     if (!changed) break;
   }
 
   storeys.sort((a, b) => (a.elevation ?? 0) - (b.elevation ?? 0));
 
-  return {
-    storeys,
-    productToStorey,
-    guidToType,
-    lengthUnitToMetres,
-    declaredHeights: declared,
-    stats: {
-      entitiesWithGuid: refToGuid.size,
-      containmentRelations: containment.length,
-      aggregateRelations: aggregates.length,
-      resolvedViaAggregates,
-      resolvedViaContainerChain,
-      durationMs: Date.now() - startedAt,
-    },
-  };
+  return { storeys, productToStorey, lengthUnitToMetres, declaredHeights: declared };
 }

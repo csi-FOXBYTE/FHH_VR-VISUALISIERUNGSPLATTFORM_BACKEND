@@ -24,11 +24,18 @@ import { IfcAPI } from "web-ifc";
 /** IFC GlobalIds are 22 characters; anything else is an expressID fallback. */
 const IFC_GUID = /^[0-9A-Za-z_$]{22}$/;
 
+/** Hard ceiling for web-ifc's own allocator. */
+const MEMORY_LIMIT_MB = 4096;
+/** Segments approximating a full circle. Higher is smoother and larger. */
+const CIRCLE_SEGMENTS = 24;
+/** Flush a merge bucket once it holds this many bytes. */
+const MERGE_BUDGET_MB = 32;
+/** Cap on what all open buckets together may hold before the largest is
+ *  flushed. Splitting buckets by colour multiplies how many stay open, so the
+ *  per-bucket budget alone no longer bounds memory. */
+const TOTAL_BUDGET_MB = MERGE_BUDGET_MB * 8;
+
 export type WebIfcConvertOptions = {
-  /** Hard ceiling for web-ifc's own allocator, in MB. */
-  memoryLimitMb?: number;
-  /** Segments used to approximate a full circle. Higher is smoother, larger. */
-  circleSegments?: number;
   /** Merge geometry while streaming instead of emitting one mesh per placement.
    *  The callback maps a node name (IFC GlobalId) to a bucket key - pass the
    *  storey lookup to keep floors separable.
@@ -37,16 +44,6 @@ export type WebIfcConvertOptions = {
    *  accessors, and the document alone costs over 3 GB before any transform
    *  runs. Merging during the stream keeps that from ever existing. */
   mergeInto?: (nodeName: string) => string | undefined;
-  /** Flush a merge bucket once it holds this many bytes. */
-  mergeBudgetMb?: number;
-  /** web-ifc's own re-origining. Off by default: it shifts ALL THREE axes,
-   *  including height, which destroys the IFC's vertical datum. Horizontal
-   *  centring is done here instead (see `recenter`), which leaves Y alone. */
-  coordinateToOrigin?: boolean;
-  /** Shift the model horizontally towards the origin while baking placements,
-   *  leaving height untouched. On by default - without it a model on survey
-   *  coordinates lands kilometres away and loses float precision with it. */
-  recenter?: boolean;
   /** Height in metres to subtract from every placement, so the building sits on
    *  the ground instead of at its elevation above sea level.
    *
@@ -91,12 +88,13 @@ export async function buildDocumentFromIfc(
 
   const bytes = await fs.readFile(inputPath);
   const modelID = api.OpenModel(new Uint8Array(bytes), {
-    // Measured: with this on, a model whose ground floor belongs at 0 m came
-    // out 2.50 m too high, because web-ifc re-origins vertically as well.
-    COORDINATE_TO_ORIGIN: options.coordinateToOrigin ?? false,
-    MEMORY_LIMIT: (options.memoryLimitMb ?? 4096) * 1024 * 1024,
+    // web-ifc's own re-origining shifts ALL THREE axes. Measured: a model whose
+    // ground floor belongs at 0 m came out 2.50 m too high. Horizontal centring
+    // happens further down instead, which leaves height alone.
+    COORDINATE_TO_ORIGIN: false,
+    MEMORY_LIMIT: MEMORY_LIMIT_MB * 1024 * 1024,
     TAPE_SIZE: 128 * 1024 * 1024,
-    CIRCLE_SEGMENTS: options.circleSegments ?? 24,
+    CIRCLE_SEGMENTS,
   });
 
   const document = new Document();
@@ -143,11 +141,8 @@ export async function buildDocumentFromIfc(
   // leaves room for only one material on it, which repainted every floor in
   // whichever colour happened to arrive first.
   const buckets = new Map<string, Bucket>();
-  const mergeBudget = (options.mergeBudgetMb ?? 32) * 1024 * 1024;
-  // Splitting by colour multiplies the number of open buckets by the palette
-  // size, so the per-bucket budget alone no longer bounds memory. This caps
-  // what all buckets together may hold before the largest one is flushed.
-  const totalBudget = (options.mergeBudgetMb ?? 32) * 8 * 1024 * 1024;
+  const mergeBudget = MERGE_BUDGET_MB * 1024 * 1024;
+  const totalBudget = TOTAL_BUDGET_MB * 1024 * 1024;
   const bucketNodes = new Map<string, number>();
   // One parent node per storey. join() merges only within a shared parent, so a
   // flat scene lets it merge by material straight across floors - measured: 150
@@ -190,7 +185,7 @@ export async function buildDocumentFromIfc(
     const node = document
       .createNode(name)
       .setMesh(document.createMesh(name).addPrimitive(primitive));
-    node.setExtras({ ...(node.getExtras() ?? {}), mergedBucket: bucket.storey });
+    node.setExtras({ ...node.getExtras(), mergedBucket: bucket.storey });
     parentFor(bucket.storey).addChild(node);
     heldBytes -= bucketBytes(bucket);
     buckets.delete(key);
@@ -353,10 +348,8 @@ export async function buildDocumentFromIfc(
       const placement = placed.flatTransformation;
       if (!originTaken) {
         originTaken = true;
-        if (options.recenter !== false) {
-          originX = Math.round(placement[12]!);
-          originZ = Math.round(placement[14]!);
-        }
+        originX = Math.round(placement[12]!);
+        originZ = Math.round(placement[14]!);
       }
       const matrix = Array.from(placement);
       matrix[12] = placement[12]! - originX;
@@ -381,7 +374,9 @@ export async function buildDocumentFromIfc(
     // The streamed mesh belongs to web-ifc and is released when this returns.
   });
 
-  for (const key of [...buckets.keys()]) flushBucket(key);
+  // Deleting the current entry while iterating a Map is well defined, and
+  // flushBucket only ever deletes the key it was handed.
+  for (const key of buckets.keys()) flushBucket(key);
 
   // Read before the merge path empties the cache below - otherwise this stat is
   // always 0 on exactly the path production uses.
