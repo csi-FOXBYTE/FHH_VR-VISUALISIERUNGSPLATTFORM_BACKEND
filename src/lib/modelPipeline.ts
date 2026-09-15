@@ -35,10 +35,16 @@ export type PipelineConfig = {
   draco: boolean;
   /** Draco connectivity encoding.
    *
-   *  "edgebreaker" compresses far better (15,5 vs 85,4 MB measured on a 5,9 M
-   *  triangle model) but reorders and welds vertices, and assumes manifold
-   *  topology - which merged IFC geometry is not. "sequential" keeps vertex
-   *  order and count, and round-trips normals to within 0,2 degrees. */
+   *  "edgebreaker" compresses far better - 15,5 vs 85,4 MB on a 5,9 M triangle
+   *  model - at the cost of reordering and welding vertices (46.278 of them
+   *  there), which formally assumes manifold topology that merged IFC geometry
+   *  does not have. It is the default because it was verified to render
+   *  correctly once geometry was bucketed per material; before that each storey
+   *  was a single huge mixed primitive.
+   *
+   *  "sequential" is the fallback if a compression artefact ever reappears: it
+   *  keeps vertex order and count and round-trips normals to within 0,2
+   *  degrees, but is 5,5x larger. Switch with IFC_DRACO, see configFromEnv. */
   dracoMethod: "edgebreaker" | "sequential";
   /** Position quantisation in bits. 14 is Draco's default and lands at ~3 mm
    *  over a 52 m model; 16 measured lossless at the millimetre and cost 1,7 MB. */
@@ -55,7 +61,7 @@ export const DEFAULT_CONFIG: PipelineConfig = {
   joinBudgetMb: 32,
   joinBudgetCount: 5_000,
   draco: true,
-  dracoMethod: "sequential",
+  dracoMethod: "edgebreaker",
   dracoQuantizePosition: 14,
   recenter: true,
 };
@@ -65,8 +71,8 @@ export const DEFAULT_CONFIG: PipelineConfig = {
  * suspected compression artefact can be bisected without a code change.
  *
  *   IFC_DRACO=off           no compression at all (~408 MB, reference)
- *   IFC_DRACO=sequential    default; vertex order preserved
- *   IFC_DRACO=edgebreaker   smallest output, welds and reorders vertices
+ *   IFC_DRACO=edgebreaker   default; smallest output (~15,5 MB)
+ *   IFC_DRACO=sequential    ~85 MB, keeps vertex order - the safe fallback
  */
 export function configFromEnv(): PipelineConfig {
   const mode = (process.env.IFC_DRACO ?? "").toLowerCase();
