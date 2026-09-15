@@ -80,6 +80,16 @@ function refsIn(list: string): string[] {
 const LOCAL_DATUM_TOLERANCE_M = 1;
 
 /**
+ * Names that mark the storey at grade.
+ *
+ * Nothing in IFC identifies it: IfcBuilding.ElevationOfTerrain and
+ * IfcSite.RefElevation were both unset on the model this was written for, and
+ * the site carried no terrain geometry. The name is the only signal left, so a
+ * miss must stay harmless - it falls back to the lowest storey.
+ */
+const GROUND_STOREY = /^(eg|e\.?g\.?\d*|erdgeschoss|ground(\s*floor)?|level\s*0+|l0+|0+|±\s*0)/i;
+
+/**
  * Height in metres to subtract so the building sits on the ground.
  *
  * Storey elevations are given against the project's vertical datum, and which
@@ -93,15 +103,24 @@ const LOCAL_DATUM_TOLERANCE_M = 1;
  * placement carried Z = 0 while each storey placement carried its own height.
  */
 export function verticalDatumOf(index: IfcIndex): number {
-  const elevations = index.storeys
-    .map((storey) => storey.elevation)
-    .filter((elevation): elevation is number => elevation !== null)
-    .map((elevation) => elevation * index.lengthUnitToMetres);
+  const levelled = index.storeys
+    .filter((storey) => storey.elevation !== null)
+    .map((storey) => ({
+      name: storey.name?.trim() ?? "",
+      elevation: storey.elevation! * index.lengthUnitToMetres,
+    }));
 
-  if (elevations.length === 0) return 0;
-  if (elevations.some((e) => Math.abs(e) < LOCAL_DATUM_TOLERANCE_M)) return 0;
+  if (levelled.length === 0) return 0;
+  if (levelled.some((s) => Math.abs(s.elevation) < LOCAL_DATUM_TOLERANCE_M)) return 0;
 
-  return Math.min(...elevations);
+  // The storey at grade belongs at zero, not the lowest one - putting a
+  // basement at zero lifts everything below grade above it, which is exactly
+  // what the ground floor is for.
+  const ground = levelled
+    .filter((s) => GROUND_STOREY.test(s.name))
+    .sort((a, b) => a.elevation - b.elevation)[0];
+
+  return ground ? ground.elevation : Math.min(...levelled.map((s) => s.elevation));
 }
 
 export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
