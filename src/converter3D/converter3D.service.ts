@@ -63,7 +63,16 @@ const converter3DService = createService(
 
         const state = await job.getState();
 
-        if (state === "failed") throw new Error("Failed");
+        // Report the failure instead of throwing. A failed job is a normal,
+        // terminal answer; throwing made it an unserialisable 500 that the
+        // client could not read and kept polling against for 43 minutes.
+        if (state === "failed") {
+          return {
+            state,
+            progress: Number(job.progress),
+            failedReason: job.failedReason || "Unbekannter Fehler",
+          };
+        }
 
         if (state === "completed") {
           const { modelMatrix } = job.returnvalue;

@@ -14,7 +14,7 @@ import {
 } from "../../@internals/index.js";
 import { assessWebIfcResult, buildDocumentFromIfc } from "../../lib/WebIfcConvert.js";
 import { buildIfcIndex } from "../../lib/ifcStoreyIndex.js";
-import { buildTransforms, DEFAULT_CONFIG, UNGROUPED_STOREY } from "../../lib/modelPipeline.js";
+import { buildTransforms, configFromEnv, UNGROUPED_STOREY } from "../../lib/modelPipeline.js";
 
 Logger.DEFAULT_INSTANCE = new Logger(Logger.Verbosity.SILENT);
 
@@ -120,7 +120,11 @@ export default async function run(
 
     await job.updateProgress(0.8);
 
-    await document.transform(...buildTransforms(DEFAULT_CONFIG));
+    const pipelineConfig = configFromEnv();
+    console.log(
+      `${job.data.fileName}: Draco ${pipelineConfig.draco ? pipelineConfig.dracoMethod : "aus"}`
+    );
+    await document.transform(...buildTransforms(pipelineConfig));
 
     const modelMatrix = new Matrix4();
 

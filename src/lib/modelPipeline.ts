@@ -33,6 +33,16 @@ export type PipelineConfig = {
    *  stay below any byte budget and still make join() allocate gigabytes. */
   joinBudgetCount: number;
   draco: boolean;
+  /** Draco connectivity encoding.
+   *
+   *  "edgebreaker" compresses far better (15,5 vs 85,4 MB measured on a 5,9 M
+   *  triangle model) but reorders and welds vertices, and assumes manifold
+   *  topology - which merged IFC geometry is not. "sequential" keeps vertex
+   *  order and count, and round-trips normals to within 0,2 degrees. */
+  dracoMethod: "edgebreaker" | "sequential";
+  /** Position quantisation in bits. 14 is Draco's default and lands at ~3 mm
+   *  over a 52 m model; 16 measured lossless at the millimetre and cost 1,7 MB. */
+  dracoQuantizePosition: number;
   /** Shift the scene horizontally towards the origin. Height is never touched:
    *  storey elevations are given relative to the IFC's vertical datum, with
    *  ground floor typically at 0. */
@@ -45,8 +55,28 @@ export const DEFAULT_CONFIG: PipelineConfig = {
   joinBudgetMb: 32,
   joinBudgetCount: 5_000,
   draco: true,
+  dracoMethod: "sequential",
+  dracoQuantizePosition: 14,
   recenter: true,
 };
+
+/**
+ * Pipeline config with the Draco stage overridable from the environment, so a
+ * suspected compression artefact can be bisected without a code change.
+ *
+ *   IFC_DRACO=off           no compression at all (~408 MB, reference)
+ *   IFC_DRACO=sequential    default; vertex order preserved
+ *   IFC_DRACO=edgebreaker   smallest output, welds and reorders vertices
+ */
+export function configFromEnv(): PipelineConfig {
+  const mode = (process.env.IFC_DRACO ?? "").toLowerCase();
+
+  if (mode === "off") return { ...DEFAULT_CONFIG, draco: false };
+  if (mode === "edgebreaker") return { ...DEFAULT_CONFIG, dracoMethod: "edgebreaker" };
+  if (mode === "sequential") return { ...DEFAULT_CONFIG, dracoMethod: "sequential" };
+
+  return DEFAULT_CONFIG;
+}
 
 /**
  * Splits each parent's children into bounded groups before join() runs, so a
@@ -141,7 +171,14 @@ export function buildTransforms(config: PipelineConfig): Transform[] {
     }
     transforms.push(join({}));
   }
-  if (config.draco) transforms.push(draco({}));
+  if (config.draco) {
+    transforms.push(
+      draco({
+        method: config.dracoMethod,
+        quantizePosition: config.dracoQuantizePosition,
+      })
+    );
+  }
   if (config.recenter) transforms.push(recenterTransform());
 
   return transforms;

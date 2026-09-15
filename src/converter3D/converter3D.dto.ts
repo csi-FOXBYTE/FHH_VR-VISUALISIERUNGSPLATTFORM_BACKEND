@@ -70,10 +70,16 @@ export const getProjectModelStatusResponseDTO = Type.Object({
     Type.Literal("waiting"),
     Type.Literal("completed"),
     Type.Literal("waiting-children"),
+    // A failed job is a normal, terminal answer - not a transport error. Left
+    // out of this union it could not be serialised, so every failure came back
+    // as an opaque 500 and the client kept polling for 43 minutes.
+    Type.Literal("failed"),
     Type.Literal("unknown"),
   ]),
   progress: Type.Number(),
   modelMatrix: Type.Optional(Type.Array(Type.Number())),
+  /** Only set when state is "failed": why the conversion gave up. */
+  failedReason: Type.Optional(Type.String()),
 });
 export type GetProjectModelStatusResponseDTO = Static<
   typeof getProjectModelStatusResponseDTO
