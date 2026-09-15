@@ -13,7 +13,7 @@ import {
   type Converter3DConvertProjectModelWorkerJob,
 } from "../../@internals/index.js";
 import { assessWebIfcResult, buildDocumentFromIfc } from "../../lib/WebIfcConvert.js";
-import { buildIfcIndex } from "../../lib/ifcStoreyIndex.js";
+import { buildIfcIndex, verticalDatumOf } from "../../lib/ifcStoreyIndex.js";
 import { buildTransforms, configFromEnv, UNGROUPED_STOREY } from "../../lib/modelPipeline.js";
 
 Logger.DEFAULT_INSTANCE = new Logger(Logger.Verbosity.SILENT);
@@ -75,6 +75,7 @@ export default async function run(
       let withoutStorey = 0;
 
       const { document: built, stats } = await buildDocumentFromIfc(sourcePath, {
+        originY: verticalDatumOf(index),
         mergeInto: (nodeName) => {
           const storey = index.productToStorey.get(nodeName);
           if (!storey) {
@@ -105,7 +106,7 @@ export default async function run(
       console.log(
         `${job.data.fileName}: ${index.storeys.length} Stockwerke, ` +
           `${assignedToStorey} Platzierungen zugeordnet, ${withoutStorey} ohne Stockwerk, ` +
-          `Versatz X ${stats.originX} / Z ${stats.originZ} m`
+          `Versatz X ${stats.originX} / Y ${stats.originY.toFixed(2)} / Z ${stats.originZ} m`
       );
       document = built;
       await job.updateProgress(0.6);

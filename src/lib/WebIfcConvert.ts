@@ -47,6 +47,15 @@ export type WebIfcConvertOptions = {
    *  leaving height untouched. On by default - without it a model on survey
    *  coordinates lands kilometres away and loses float precision with it. */
   recenter?: boolean;
+  /** Height in metres to subtract from every placement, so the building sits on
+   *  the ground instead of at its elevation above sea level.
+   *
+   *  This cannot be derived here: the elevation enters through each storey's
+   *  own placement, not through the site (measured: site placement Z was 0
+   *  while every storey carried 220-258 m). The caller knows the storey
+   *  elevations from the index and passes the datum in. Leave undefined for
+   *  models already modelled on a local datum. */
+  originY?: number;
 };
 
 export type WebIfcConvertStats = {
@@ -60,9 +69,10 @@ export type WebIfcConvertStats = {
   materials: number;
   /** Share of *elements* named with a real IFC GlobalId. */
   guidRatio: number;
-  /** Horizontal offset subtracted from every placement, in metres. Add it back
-   *  to recover the model's original survey coordinates. */
+  /** Offset subtracted from every placement, in metres. Add it back to recover
+   *  the model's original survey coordinates and elevation. */
   originX: number;
+  originY: number;
   originZ: number;
   durationMs: number;
 };
@@ -266,6 +276,7 @@ export async function buildDocumentFromIfc(
   let originX = 0;
   let originZ = 0;
   let originTaken = false;
+  const originY = options.originY ?? 0;
 
   api.StreamAllMeshes(modelID, (flatMesh) => {
     elements++;
@@ -349,6 +360,7 @@ export async function buildDocumentFromIfc(
       }
       const matrix = Array.from(placement);
       matrix[12] = placement[12]! - originX;
+      matrix[13] = placement[13]! - originY;
       matrix[14] = placement[14]! - originZ;
 
       const bucketKey = options.mergeInto?.(name);
@@ -396,6 +408,7 @@ export async function buildDocumentFromIfc(
       // geometries, which would deflate the ratio by exactly that factor.
       guidRatio: elements > 0 ? guidNamed / elements : 0,
       originX,
+      originY,
       originZ,
       durationMs: Date.now() - startedAt,
     },
