@@ -68,10 +68,21 @@ export default async function run(
         index.storeys.map((storey) => [storey.guid, storey.name ?? storey.guid])
       );
 
+      // Storey coverage is now the metric that can quietly collapse: an
+      // unassigned element still keeps its geometry, so nothing else would show
+      // that the grouping stopped working.
+      let assignedToStorey = 0;
+      let withoutStorey = 0;
+
       const { document: built, stats } = await buildDocumentFromIfc(sourcePath, {
         mergeInto: (nodeName) => {
           const storey = index.productToStorey.get(nodeName);
-          return storey ? (storeyLabel.get(storey) ?? storey) : UNGROUPED_STOREY;
+          if (!storey) {
+            withoutStorey++;
+            return UNGROUPED_STOREY;
+          }
+          assignedToStorey++;
+          return storeyLabel.get(storey) ?? storey;
         },
       });
 
@@ -90,6 +101,10 @@ export default async function run(
           `${stats.placements} Platzierungen, ${stats.uniqueGeometries} Geometrien, ` +
           `${stats.triangles} Dreiecke, GUID-Anteil ` +
           `${(stats.guidRatio * 100).toFixed(0)} %, ${stats.durationMs} ms`
+      );
+      console.log(
+        `${job.data.fileName}: ${index.storeys.length} Stockwerke, ` +
+          `${assignedToStorey} Platzierungen zugeordnet, ${withoutStorey} ohne Stockwerk`
       );
       document = built;
       await job.updateProgress(0.6);
