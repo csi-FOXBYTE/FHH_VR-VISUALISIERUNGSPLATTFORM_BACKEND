@@ -41,8 +41,12 @@ export type WebIfcConvertOptions = {
   mergeBudgetMb?: number;
   /** web-ifc's own re-origining. Off by default: it shifts ALL THREE axes,
    *  including height, which destroys the IFC's vertical datum. Horizontal
-   *  centring is done by recenterTransform() instead, which leaves Y alone. */
+   *  centring is done here instead (see `recenter`), which leaves Y alone. */
   coordinateToOrigin?: boolean;
+  /** Shift the model horizontally towards the origin while baking placements,
+   *  leaving height untouched. On by default - without it a model on survey
+   *  coordinates lands kilometres away and loses float precision with it. */
+  recenter?: boolean;
 };
 
 export type WebIfcConvertStats = {
@@ -56,6 +60,10 @@ export type WebIfcConvertStats = {
   materials: number;
   /** Share of *elements* named with a real IFC GlobalId. */
   guidRatio: number;
+  /** Horizontal offset subtracted from every placement, in metres. Add it back
+   *  to recover the model's original survey coordinates. */
+  originX: number;
+  originZ: number;
   durationMs: number;
 };
 
@@ -253,6 +261,11 @@ export async function buildDocumentFromIfc(
   let placements = 0;
   let triangles = 0;
   let guidNamed = 0;
+  // Horizontal shift applied to every placement, taken from the first one.
+  // It only has to land near the model, not at its exact centre.
+  let originX = 0;
+  let originZ = 0;
+  let originTaken = false;
 
   api.StreamAllMeshes(modelID, (flatMesh) => {
     elements++;
@@ -318,12 +331,32 @@ export async function buildDocumentFromIfc(
         geometry.delete();
       }
 
+      // IFC models are routinely modelled on survey coordinates. Measured: a
+      // building 59 m across sat at X 3.517.450 / Z -5.405.163, i.e. 6.449 km
+      // from the origin, where a 32-bit float resolves to only ~0,4 m. Shifting
+      // has to happen here, while the values still come from web-ifc as
+      // doubles - a later pass would only move geometry that is already coarse.
+      //
+      // Height is deliberately untouched: storey elevations are relative to the
+      // IFC's own vertical datum and the ground floor belongs at its own level.
+      const placement = placed.flatTransformation;
+      if (!originTaken) {
+        originTaken = true;
+        if (options.recenter !== false) {
+          originX = Math.round(placement[12]!);
+          originZ = Math.round(placement[14]!);
+        }
+      }
+      const matrix = Array.from(placement);
+      matrix[12] = placement[12]! - originX;
+      matrix[14] = placement[14]! - originZ;
+
       const bucketKey = options.mergeInto?.(name);
       if (bucketKey !== undefined) {
-        appendToBucket(bucketKey, mesh, placed.flatTransformation, placed.color);
+        appendToBucket(bucketKey, mesh, matrix, placed.color);
       } else {
         const node = document.createNode(name).setMesh(mesh);
-        node.setMatrix(Array.from(placed.flatTransformation) as mat4);
+        node.setMatrix(matrix as mat4);
         scene.addChild(node);
       }
       placements++;
@@ -362,6 +395,8 @@ export async function buildDocumentFromIfc(
       // Per element, not per placement: an element commonly carries several
       // geometries, which would deflate the ratio by exactly that factor.
       guidRatio: elements > 0 ? guidNamed / elements : 0,
+      originX,
+      originZ,
       durationMs: Date.now() - startedAt,
     },
   };

@@ -144,6 +144,13 @@ function bucketForJoin(budgetMb: number, budgetCount: number): Transform {
 /**
  * Shifts the scene horizontally so it sits near the origin.
  *
+ * ONLY EFFECTIVE FOR NODE TRANSFORMS, i.e. imported glTF/GLB. The IFC path
+ * bakes placements into the vertices, so every node sits at translation zero
+ * and there is nothing here to subtract - this used to be a silent no-op that
+ * let a model on survey coordinates through untouched, 6.449 km from the
+ * origin. That case is handled in WebIfcConvert while the coordinates are
+ * still doubles; see its `recenter` option.
+ *
  * HEIGHT IS DELIBERATELY NOT TOUCHED. An earlier version subtracted the first
  * node's full translation including Y, and "first node" is whatever happens to
  * come first in the file. Measured on a model whose first element sat in the

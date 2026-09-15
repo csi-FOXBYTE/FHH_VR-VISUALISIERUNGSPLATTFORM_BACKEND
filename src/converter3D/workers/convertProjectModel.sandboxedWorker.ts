@@ -104,7 +104,8 @@ export default async function run(
       );
       console.log(
         `${job.data.fileName}: ${index.storeys.length} Stockwerke, ` +
-          `${assignedToStorey} Platzierungen zugeordnet, ${withoutStorey} ohne Stockwerk`
+          `${assignedToStorey} Platzierungen zugeordnet, ${withoutStorey} ohne Stockwerk, ` +
+          `Versatz X ${stats.originX} / Z ${stats.originZ} m`
       );
       document = built;
       await job.updateProgress(0.6);
