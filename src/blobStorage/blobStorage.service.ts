@@ -256,7 +256,10 @@ const blobStorageService = createService(
       async delete(containerName: string, blobName: string) {
         const client = await _getClient(containerName, blobName);
 
-        return await client.delete();
+        // deleteIfExists, not delete: every caller is a cleanup path, and a
+        // blob that is already gone is the outcome they wanted. Throwing on it
+        // failed the scheduled deleteBlob job and filled the log with 404s.
+        return await client.deleteIfExists();
       },
 
       deleteLater,
