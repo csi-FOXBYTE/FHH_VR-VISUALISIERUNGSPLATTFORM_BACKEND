@@ -5,7 +5,9 @@ import "common"
 import "event"
 
 model User extends Base, AdminPrivilege {
-    name              String?         @allow('read', true)
+    // A project reader may resolve the display name of its owner without
+    // gaining model-level read access to the complete foreign user record.
+    name              String?         @allow('read', projects?[visibleForUsers?[id == auth().id] || visibleForGroups?[assignedUsers?[id == auth().id]] || events?[attendees?[userId == auth().id]]], true)
     email             String          @unique() @allow('read', true)
     emailVerified     DateTime?
     image             String?         @allow('read', true)
