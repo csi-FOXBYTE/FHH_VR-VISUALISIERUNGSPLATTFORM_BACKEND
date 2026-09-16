@@ -181,6 +181,14 @@ const blobStorageService = createService(
         //
         // The index is encoded in the block id (see /uploadBlock: base64 of
         // the zero-padded index), so sort by it explicitly.
+        // Committing an empty list would replace an already committed blob
+        // with a zero-byte one, which is what a repeated /commitUpload does.
+        if (blocks.length === 0) {
+          throw new Error(
+            `No staged blocks for this upload; refusing to commit an empty blob.`
+          );
+        }
+
         const indexed = blocks.map((block) => {
           const decoded = Buffer.from(block.name, "base64").toString("utf8");
           const index = Number.parseInt(decoded, 10);

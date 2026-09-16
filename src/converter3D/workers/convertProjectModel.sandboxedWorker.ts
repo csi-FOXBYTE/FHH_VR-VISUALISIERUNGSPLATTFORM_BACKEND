@@ -149,9 +149,11 @@ export default async function run(
     // The source blob is deliberately NOT deleted here. A failed conversion used
     // to remove it, forcing the user to re-upload a multi-GB file to retry. The
     // deleteLater scheduled at enqueue time cleans it up anyway.
+    // The stack, not just the message: this runs in a sandboxed child whose
+    // output is the only record of where a conversion died.
     console.error(
       `Project model conversion failed for ${job.data.fileName}:`,
-      e instanceof Error ? e.message : e
+      e instanceof Error ? (e.stack ?? e.message) : e
     );
     throw e;
   } finally {

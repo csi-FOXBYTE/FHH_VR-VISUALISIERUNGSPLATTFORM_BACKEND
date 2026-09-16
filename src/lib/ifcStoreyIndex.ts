@@ -132,7 +132,8 @@ const PLAUSIBLE_BELOW_LOWEST_M = 50;
  * the site carried no terrain geometry. The name is the only signal left, so a
  * miss must stay harmless - it falls back to the lowest storey.
  */
-const GROUND_STOREY = /^(eg|e\.?g\.?\d*|erdgeschoss|ground(\s*floor)?|level\s*0+|l0+|0+|±\s*0)/i;
+const GROUND_STOREY =
+  /^(?:eg\d*|e\.\s*g\.?|erdgeschoss|ground(?:\s*floor)?|level\s*0+|l0+|[+±]?\s*0+(?:[.,]0+)?)$/i;
 
 export type VerticalDatum = {
   /** Metres to subtract from every placement. */
@@ -307,13 +308,32 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
     }
   };
 
+  // A ';' inside a quoted STEP string does not end the statement. Splitting
+  // blindly tore such statements apart, and a containment relation whose name
+  // carried one was silently dropped - its elements landed in "ohne Stockwerk".
+  // STEP escapes a quote by doubling it, so toggling on every quote is correct.
+  const quotesIn = (text: string) => {
+    let count = 0;
+    for (let i = 0; i < text.length; i++) if (text.charCodeAt(i) === 39) count++;
+    return count;
+  };
+
+  let buffered = "";
   for await (const chunk of stream) {
     pending += chunk;
     const parts = pending.split(";");
     pending = parts.pop() ?? "";
-    for (const part of parts) handle(part);
+    for (const part of parts) {
+      buffered += part;
+      if (quotesIn(buffered) % 2 === 1) {
+        buffered += ";";
+        continue;
+      }
+      handle(buffered);
+      buffered = "";
+    }
   }
-  if (pending.trim()) handle(pending);
+  if ((buffered + pending).trim()) handle(buffered + pending);
 
   // Prefer the length unit the project assigns; fall back to any declared one.
   let lengthUnitToMetres = 1;

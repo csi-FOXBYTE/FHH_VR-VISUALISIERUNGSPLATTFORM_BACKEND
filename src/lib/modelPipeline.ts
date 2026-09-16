@@ -160,13 +160,20 @@ function bucketForJoin(budgetMb: number, budgetCount: number): Transform {
 function recenterTransform(): Transform {
   return (document: Document) => {
     const root = document.getRoot();
-    const firstMeshNode = root.listNodes().find((node) => node.getMesh());
-    if (!firstMeshNode) return;
-
-    const [offsetX, , offsetZ] = firstMeshNode.getTranslation();
 
     for (const scene of root.listScenes()) {
-      for (const node of scene.listChildren()) {
+      // The offset has to come from the very nodes that get shifted. Reading it
+      // from any node in the document instead put the two out of step as soon
+      // as bucketForJoin introduced a level of nesting, and moved the model by
+      // the difference.
+      const children = scene.listChildren();
+      const reference = children[0];
+      if (!reference) continue;
+
+      const [offsetX, , offsetZ] = reference.getTranslation();
+      if (offsetX === 0 && offsetZ === 0) continue;
+
+      for (const node of children) {
         const translation = node.getTranslation();
         node.setTranslation([translation[0] - offsetX, translation[1], translation[2] - offsetZ]);
       }
