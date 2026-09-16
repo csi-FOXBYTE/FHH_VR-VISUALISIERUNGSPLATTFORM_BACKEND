@@ -118,6 +118,10 @@ function stepNumber(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/** Longest statement accepted while waiting for a closing quote. Real STEP
+ *  statements are far shorter; beyond this the file is malformed. */
+const MAX_STATEMENT_CHARS = 1_000_000;
+
 /** A storey this close to zero means the model already uses a local datum. */
 const LOCAL_DATUM_TOLERANCE_M = 1;
 
@@ -319,18 +323,30 @@ export async function buildIfcIndex(filePath: string): Promise<IfcIndex> {
   };
 
   let buffered = "";
+  // Parity is carried, not recomputed: counting quotes in the whole buffer each
+  // time turned a malformed file into a quadratic scan - 17 s instead of 1 s on
+  // a 128 MB model. Only the newly added part needs counting.
+  let insideString = false;
+
   for await (const chunk of stream) {
     pending += chunk;
     const parts = pending.split(";");
     pending = parts.pop() ?? "";
     for (const part of parts) {
       buffered += part;
-      if (quotesIn(buffered) % 2 === 1) {
+      if (quotesIn(part) % 2 === 1) insideString = !insideString;
+
+      // The length cap is the escape hatch: a malformed file with an unbalanced
+      // quote would otherwise swallow everything after it into one statement
+      // that never ends, and the whole storey index with it.
+      if (insideString && buffered.length < MAX_STATEMENT_CHARS) {
         buffered += ";";
         continue;
       }
+
       handle(buffered);
       buffered = "";
+      insideString = false;
     }
   }
   if ((buffered + pending).trim()) handle(buffered + pending);
