@@ -1,0 +1,205 @@
+import { Document, Transform } from "@gltf-transform/core";
+import { draco, join, prune } from "@gltf-transform/functions";
+
+/**
+ * Post-processing for a glTF document produced from IFC.
+ *
+ * Deliberately short. Every stage here earned its place in measurements on six
+ * real models; the ones that did not are recorded in the commit history rather
+ * than kept around as dead options:
+ *
+ *   dedup()            pointless before join(), which merges the very instances
+ *                      dedup creates - identical output, 15 s slower, and on a
+ *                      model with 237k meshes it never finished
+ *   flatten()          would collapse the storey grouping back into one mesh
+ *   weld()             no effect on the final size once draco runs
+ *   simplify()         cost up to 64 % of the triangles for no size benefit
+ *   quantize()         cut payload by 60 % but the peak by only 13 %
+ *   textureCompress()  IFC output is untextured; a measured no-op
+ */
+
+/** Bucket name for geometry that could not be assigned to a storey. */
+export const UNGROUPED_STOREY = "ohne-stockwerk";
+
+export type PipelineConfig = {
+  prune: boolean;
+  /** Merge meshes sharing a material. Scoped to each node's parent, so the
+   *  grouping decides whether this yields one mesh per model or per storey. */
+  join: boolean;
+  /** Cap on bytes per join group. Without it a single primitive grew to 338 of
+   *  407 MB, and serialising that one primitive set the memory peak. */
+  joinBudgetMb: number;
+  /** Cap on meshes per join group. Bytes alone are not enough: 237k tiny meshes
+   *  stay below any byte budget and still make join() allocate gigabytes. */
+  joinBudgetCount: number;
+  draco: boolean;
+  /** Draco connectivity encoding.
+   *
+   *  "edgebreaker" compresses far better - 15,5 vs 85,4 MB on a 5,9 M triangle
+   *  model - at the cost of reordering and welding vertices (46.278 of them
+   *  there), which formally assumes manifold topology that merged IFC geometry
+   *  does not have. It is the default because it was verified to render
+   *  correctly once geometry was bucketed per material; before that each storey
+   *  was a single huge mixed primitive.
+   *
+   *  "sequential" is the fallback if a compression artefact ever reappears: it
+   *  keeps vertex order and count and round-trips normals to within 0,2
+   *  degrees, but is 5,5x larger. Switch with IFC_DRACO, see configFromEnv. */
+  dracoMethod: "edgebreaker" | "sequential";
+  /** Position quantisation in bits. 14 is Draco's default and lands at ~3 mm
+   *  over a 52 m model; 16 measured lossless at the millimetre and cost 1,7 MB. */
+  dracoQuantizePosition: number;
+  /** Shift the scene horizontally towards the origin. Height is never touched:
+   *  storey elevations are given relative to the IFC's vertical datum, with
+   *  ground floor typically at 0. */
+  recenter: boolean;
+};
+
+export const DEFAULT_CONFIG: PipelineConfig = {
+  prune: true,
+  join: true,
+  joinBudgetMb: 32,
+  joinBudgetCount: 5_000,
+  draco: true,
+  dracoMethod: "edgebreaker",
+  dracoQuantizePosition: 14,
+  recenter: true,
+};
+
+/**
+ * Pipeline config with the Draco stage overridable from the environment, so a
+ * suspected compression artefact can be bisected without a code change.
+ *
+ *   IFC_DRACO=off           no compression at all (~408 MB, reference)
+ *   IFC_DRACO=edgebreaker   default; smallest output (~15,5 MB)
+ *   IFC_DRACO=sequential    ~85 MB, keeps vertex order - the safe fallback
+ */
+export function configFromEnv(): PipelineConfig {
+  const mode = (process.env.IFC_DRACO ?? "").toLowerCase();
+
+  if (mode === "off") return { ...DEFAULT_CONFIG, draco: false };
+  if (mode === "edgebreaker") return { ...DEFAULT_CONFIG, dracoMethod: "edgebreaker" };
+  if (mode === "sequential") return { ...DEFAULT_CONFIG, dracoMethod: "sequential" };
+
+  return DEFAULT_CONFIG;
+}
+
+/**
+ * Splits each parent's children into bounded groups before join() runs, so a
+ * single merged primitive can never exceed the budget.
+ */
+function bucketForJoin(budgetMb: number, budgetCount: number): Transform {
+  return (document: Document) => {
+    const budgetBytes = budgetMb > 0 ? budgetMb * 1024 * 1024 : Infinity;
+    const budgetNodes = budgetCount > 0 ? budgetCount : Infinity;
+
+    // Size from metadata only. Calling getArray() here would materialise every
+    // accessor just to measure it, which is exactly what this exists to avoid.
+    const byteLengthOf = (accessor: ReturnType<Document["createAccessor"]> | null) =>
+      accessor
+        ? accessor.getCount() * accessor.getElementSize() * accessor.getComponentSize()
+        : 0;
+
+    const sizeOf = (node: ReturnType<Document["createNode"]>) => {
+      const mesh = node.getMesh();
+      if (!mesh) return 0;
+      let bytes = 0;
+      for (const primitive of mesh.listPrimitives()) {
+        bytes += byteLengthOf(primitive.getIndices());
+        for (const attribute of primitive.listAttributes()) bytes += byteLengthOf(attribute);
+      }
+      return bytes;
+    };
+
+    for (const scene of document.getRoot().listScenes()) {
+      for (const parent of scene.listChildren()) {
+        const children = parent.listChildren().filter((child) => child.getMesh());
+        if (children.length < 2) continue;
+
+        const label = parent.getName() || "gruppe";
+        let bucket = document.createNode(`${label}_b0`);
+        let index = 0;
+        let accumulated = 0;
+        let count = 0;
+        parent.addChild(bucket);
+
+        for (const child of children) {
+          const bytes = sizeOf(child);
+          if (count > 0 && (accumulated + bytes > budgetBytes || count + 1 > budgetNodes)) {
+            bucket = document.createNode(`${label}_b${++index}`);
+            parent.addChild(bucket);
+            accumulated = 0;
+            count = 0;
+          }
+          parent.removeChild(child);
+          bucket.addChild(child);
+          accumulated += bytes;
+          count++;
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Shifts the scene horizontally so it sits near the origin.
+ *
+ * ONLY EFFECTIVE FOR NODE TRANSFORMS, i.e. imported glTF/GLB. The IFC path
+ * bakes placements into the vertices, so every node sits at translation zero
+ * and there is nothing here to subtract - this used to be a silent no-op that
+ * let a model on survey coordinates through untouched, 6.449 km from the
+ * origin. That case is handled in WebIfcConvert while the coordinates are
+ * still doubles; see its `recenter` option.
+ *
+ * HEIGHT IS DELIBERATELY NOT TOUCHED. An earlier version subtracted the first
+ * node's full translation including Y, and "first node" is whatever happens to
+ * come first in the file. Measured on a model whose first element sat in the
+ * basement: the whole building rose by exactly 2.92 m, the basement elevation,
+ * leaving the ground floor floating above grade.
+ */
+function recenterTransform(): Transform {
+  return (document: Document) => {
+    const root = document.getRoot();
+
+    for (const scene of root.listScenes()) {
+      // The offset has to come from the very nodes that get shifted. Reading it
+      // from any node in the document instead put the two out of step as soon
+      // as bucketForJoin introduced a level of nesting, and moved the model by
+      // the difference.
+      const children = scene.listChildren();
+      const reference = children[0];
+      if (!reference) continue;
+
+      const [offsetX, , offsetZ] = reference.getTranslation();
+      if (offsetX === 0 && offsetZ === 0) continue;
+
+      for (const node of children) {
+        const translation = node.getTranslation();
+        node.setTranslation([translation[0] - offsetX, translation[1], translation[2] - offsetZ]);
+      }
+    }
+  };
+}
+
+export function buildTransforms(config: PipelineConfig): Transform[] {
+  const transforms: Transform[] = [];
+
+  if (config.prune) transforms.push(prune());
+  if (config.join) {
+    if (config.joinBudgetMb > 0 || config.joinBudgetCount > 0) {
+      transforms.push(bucketForJoin(config.joinBudgetMb, config.joinBudgetCount));
+    }
+    transforms.push(join({}));
+  }
+  if (config.draco) {
+    transforms.push(
+      draco({
+        method: config.dracoMethod,
+        quantizePosition: config.dracoQuantizePosition,
+      })
+    );
+  }
+  if (config.recenter) transforms.push(recenterTransform());
+
+  return transforms;
+}

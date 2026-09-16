@@ -172,11 +172,49 @@ const blobStorageService = createService(
         const client = await _getClient(containerName, blobName);
 
         const blockListResponse = await client.getBlockList("uncommitted");
+        const blocks = blockListResponse.uncommittedBlocks ?? [];
 
-        const blockIds =
-          blockListResponse.uncommittedBlocks?.map((block) => block.name) ?? [];
+        // commitBlockList assembles the blob in the order given here, NOT in
+        // block-id order. The list returned by the service reflects upload
+        // order, and the client uploads blocks concurrently, so committing it
+        // as-is scrambles every file larger than one block.
+        //
+        // The index is encoded in the block id (see /uploadBlock: base64 of
+        // the zero-padded index), so sort by it explicitly.
+        // Committing an empty list would replace an already committed blob
+        // with a zero-byte one, which is what a repeated /commitUpload does.
+        if (blocks.length === 0) {
+          throw new Error(
+            `No staged blocks for this upload; refusing to commit an empty blob.`
+          );
+        }
 
-        await client.commitBlockList(blockIds);
+        const indexed = blocks.map((block) => {
+          const decoded = Buffer.from(block.name, "base64").toString("utf8");
+          const index = Number.parseInt(decoded, 10);
+          if (!Number.isFinite(index)) {
+            throw new Error(
+              `Block id "${block.name}" does not carry a usable index; ` +
+                `refusing to commit an upload whose order cannot be determined.`
+            );
+          }
+          return { index, name: block.name };
+        });
+
+        indexed.sort((a, b) => a.index - b.index);
+
+        // A missing block would silently produce a truncated file that still
+        // parses far enough to look plausible.
+        indexed.forEach(({ index }, position) => {
+          if (index !== position) {
+            throw new Error(
+              `Upload is incomplete: expected block ${position}, found ${index}. ` +
+                `${indexed.length} of at least ${index + 1} blocks were staged.`
+            );
+          }
+        });
+
+        await client.commitBlockList(indexed.map(({ name }) => name));
       },
 
       async deleteContainer(containerName: string) {
@@ -218,7 +256,10 @@ const blobStorageService = createService(
       async delete(containerName: string, blobName: string) {
         const client = await _getClient(containerName, blobName);
 
-        return await client.delete();
+        // deleteIfExists, not delete: every caller is a cleanup path, and a
+        // blob that is already gone is the outcome they wanted. Throwing on it
+        // failed the scheduled deleteBlob job and filled the log with 404s.
+        return await client.deleteIfExists();
       },
 
       deleteLater,
