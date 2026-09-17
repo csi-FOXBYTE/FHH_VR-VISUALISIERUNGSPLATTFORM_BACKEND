@@ -1,11 +1,7 @@
-name: Deploy backend (manual)
+name: Build & deploy backend
 
 on:
   workflow_dispatch:
-    inputs:
-      image_tag:
-        description: "Docker Hub tag to deploy, e.g. 0.2.15"
-        required: true
 
 permissions:
   id-token: write
@@ -21,9 +17,37 @@ env:
   IMAGE: docker.io/foxbytecsi/fhhvr-webbackend
 
 jobs:
-  deploy:
+  ship:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute tag
+        id: meta
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          echo "tag=${VERSION}-build.$(printf '%05d' ${{ github.run_number }})" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.tag }}
+
       - name: Azure login
         uses: azure/login@v2
         with:
@@ -35,7 +59,7 @@ jobs:
         run: |
           set -euo pipefail
           az containerapp update -n "$APP" -g "$RG" \
-            --image "${IMAGE}:${{ inputs.image_tag }}"
+            --image "${IMAGE}:${{ steps.meta.outputs.tag }}"
 
       - name: Wait for revision to become healthy
         run: |
