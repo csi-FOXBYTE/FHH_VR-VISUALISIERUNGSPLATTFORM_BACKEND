@@ -1,0 +1,64 @@
+name: Deploy backend (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Docker Hub tag to deploy, e.g. 0.2.15"
+        required: true
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-fhhvr-backend
+  cancel-in-progress: false
+
+env:
+  APP: fhhvr-webbackend
+  RG: FHH-VR-VISUALISIERUNGSPLATTFORM
+  IMAGE: docker.io/foxbytecsi/fhhvr-webbackend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy image
+        run: |
+          set -euo pipefail
+          az containerapp update -n "$APP" -g "$RG" \
+            --image "${IMAGE}:${{ inputs.image_tag }}"
+
+      - name: Wait for revision to become healthy
+        run: |
+          set -euo pipefail
+          REV=$(az containerapp show -n "$APP" -g "$RG" \
+            --query "properties.latestRevisionName" -o tsv)
+          echo "Waiting for $REV"
+          for i in $(seq 1 40); do
+            STATE=$(az containerapp revision show -n "$APP" -g "$RG" \
+              --revision "$REV" --query "properties.runningState" -o tsv)
+            echo "  $STATE"
+            case "$STATE" in
+              Running|RunningAtMaxScale) echo "OK"; exit 0 ;;
+              Failed|Degraded) echo "::error::Revision $REV is $STATE"; exit 1 ;;
+            esac
+            sleep 15
+          done
+          echo "::error::Timed out waiting for $REV"
+          exit 1
+
+      - name: Show revision on failure
+        if: failure()
+        run: |
+          az containerapp revision list -n "$APP" -g "$RG" -o table \
+            --query "[].{rev:name,state:properties.runningState,traffic:properties.trafficWeight,image:properties.template.containers[0].image}" || true
+          az containerapp logs show -n "$APP" -g "$RG" --type system --tail 50 || true
