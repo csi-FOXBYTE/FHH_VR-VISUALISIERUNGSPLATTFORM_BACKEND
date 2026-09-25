@@ -12,7 +12,7 @@
     "build": "fastify-toab build",
     "backfill:base-layer-sizes": "tsx src/scripts/backfillBaseLayerSizes.ts",
     "start": "node .build/@internals/run.js",
-    "publish:docker": "docker build -t fhhvr-webbackend:0.2.15 . && docker tag fhhvr-webbackend:0.2.15 foxbytecsi/fhhvr-webbackend:0.2.15 && docker push foxbytecsi/fhhvr-webbackend:0.2.15"
+    "publish:docker": "docker build -t fhhvr-webbackend:0.2.16 . && docker tag fhhvr-webbackend:0.2.16 foxbytecsi/fhhvr-webbackend:0.2.16 && docker push foxbytecsi/fhhvr-webbackend:0.2.16"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
